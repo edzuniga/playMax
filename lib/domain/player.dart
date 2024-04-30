@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 abstract class Player {
   Player({
     required this.name,
@@ -6,7 +8,7 @@ abstract class Player {
     this.isActive = true,
   });
   final String name;
-  final DateTime start;
-  final DateTime end;
+  final TimeOfDay start;
+  final TimeOfDay end;
   final bool isActive;
 }
