@@ -14,22 +14,52 @@ class DashboardLayout extends ConsumerWidget {
     int pageIndex = ref.watch(activePageProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Jugadores Activos'),
+        title: const Text('Jugadores ACTIVOS / INACTIVOS'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(
+              right: 10,
+            ),
+            child: IconButton(
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white12,
+              ),
+              onPressed: () {
+                context.goNamed(Routes.login);
+              },
+              icon: const Icon(
+                Icons.logout_outlined,
+                color: Colors.white,
+              ),
+            ),
+          )
+        ],
       ),
       body: child,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            title: Text('Nuevo Jugador'),
-            scrollable: true,
-            content: NewPlayerModal(),
-          ),
-        ),
-        child: const Icon(Icons.person_add_alt_1),
-      ),
+      floatingActionButton: pageIndex == 0
+          ? FloatingActionButton(
+              backgroundColor: Colors.white,
+              onPressed: () => showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const AlertDialog(
+                  title: Text(
+                    'Nuevo Jugador',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                  scrollable: true,
+                  content: NewPlayerModal(),
+                ),
+              ),
+              child: const Icon(Icons.person_add_alt_1),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.deepPurple,
+        selectedItemColor: Colors.white,
         currentIndex: pageIndex,
         onTap: (i) {
           ref.read(activePageProvider.notifier).setPageIndex(i);

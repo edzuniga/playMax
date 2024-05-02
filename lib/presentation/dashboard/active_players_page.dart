@@ -5,6 +5,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:playmax_app_1/data/player_model.dart';
+import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 
 class ActivePlayersPage extends ConsumerWidget {
@@ -85,19 +86,22 @@ class ActivePlayersPage extends ConsumerWidget {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: 30,
+            horizontal: 10,
             vertical: 10,
           ),
           width: screenSize.width * 0.4,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(
                 height: 20,
                 child: Text(
                   'Usuarios Activos',
                   textAlign: TextAlign.start,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               Expanded(
@@ -116,11 +120,10 @@ class ActivePlayersPage extends ConsumerWidget {
                         children: [
                           SlidableAction(
                             borderRadius: BorderRadius.circular(5),
-                            onPressed: (context) {},
+                            onPressed: _erase,
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
                             icon: Icons.delete,
-                            label: 'Borrar',
                           ),
                           SlidableAction(
                             borderRadius: BorderRadius.circular(5),
@@ -128,16 +131,16 @@ class ActivePlayersPage extends ConsumerWidget {
                             backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                             icon: Icons.edit,
-                            label: 'Editar',
                           ),
                         ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(5.0),
                         child: Container(
+                          width: double.infinity,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                color: Colors.black12,
+                                color: Colors.white24,
                               ),
                               borderRadius: BorderRadius.circular(8)),
                           child: ListTile(
@@ -148,8 +151,10 @@ class ActivePlayersPage extends ConsumerWidget {
                             ),
                             title: Text(
                               activePlayersList[i].name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             subtitle: RichText(
                               text: TextSpan(
@@ -162,7 +167,7 @@ class ActivePlayersPage extends ConsumerWidget {
                                     TextSpan(
                                       text: ' $formattedStartTime',
                                       style: const TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const TextSpan(
@@ -171,14 +176,11 @@ class ActivePlayersPage extends ConsumerWidget {
                                     TextSpan(
                                       text: ' $formattedEndTime',
                                       style: const TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ]),
                             ),
-
-                            /*Text(
-                                "Inicio: $formattedStartTime \nFin: $formattedEndTime"), */
                             trailing: const Icon(
                               Icons.check_circle,
                               color: Colors.green,
@@ -193,22 +195,25 @@ class ActivePlayersPage extends ConsumerWidget {
             ],
           ),
         ),
-        SizedBox(height: screenSize.height, child: VerticalDivider()),
+        SizedBox(height: screenSize.height, child: const VerticalDivider()),
         Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: 30,
+            horizontal: 10,
             vertical: 10,
           ),
           width: screenSize.width * 0.4,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(
                 height: 20,
                 child: Text(
                   'Usuarios Inactivos',
                   textAlign: TextAlign.start,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               Expanded(
@@ -219,34 +224,35 @@ class ActivePlayersPage extends ConsumerWidget {
                         _getFormattedTime(activePlayersList[i].start);
                     String formattedEndTime =
                         _getFormattedTime(activePlayersList[i].end);
+
+                    //Condición para solamente elegir a los activos
                     return Slidable(
-                      endActionPane: ActionPane(
+                      startActionPane: ActionPane(
                         motion: const DrawerMotion(),
                         children: [
-                          SlidableAction(
-                            borderRadius: BorderRadius.circular(5),
-                            onPressed: (context) {},
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            icon: Icons.delete,
-                            label: 'Borrar',
-                          ),
                           SlidableAction(
                             borderRadius: BorderRadius.circular(5),
                             onPressed: (context) {},
                             backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                             icon: Icons.edit,
-                            label: 'Editar',
+                          ),
+                          SlidableAction(
+                            borderRadius: BorderRadius.circular(5),
+                            onPressed: (context) {},
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            icon: Icons.delete,
                           ),
                         ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(5.0),
                         child: Container(
+                          width: double.infinity,
                           decoration: BoxDecoration(
                               border: Border.all(
-                                color: Colors.black12,
+                                color: Colors.white24,
                               ),
                               borderRadius: BorderRadius.circular(8)),
                           child: ListTile(
@@ -257,8 +263,10 @@ class ActivePlayersPage extends ConsumerWidget {
                             ),
                             title: Text(
                               activePlayersList[i].name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             subtitle: RichText(
                               text: TextSpan(
@@ -271,7 +279,7 @@ class ActivePlayersPage extends ConsumerWidget {
                                     TextSpan(
                                       text: ' $formattedStartTime',
                                       style: const TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const TextSpan(
@@ -280,13 +288,13 @@ class ActivePlayersPage extends ConsumerWidget {
                                     TextSpan(
                                       text: ' $formattedEndTime',
                                       style: const TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ]),
                             ),
                             trailing: const Icon(
-                              Icons.highlight_remove_outlined,
+                              Icons.check_circle,
                               color: Colors.red,
                             ),
                           ),
@@ -315,5 +323,24 @@ class ActivePlayersPage extends ConsumerWidget {
       formattedMinute = '0${time.minute}';
     }
     return "$formattedHour:$formattedMinute$amOrPm";
+  }
+
+  _erase(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        title: Text(
+          'Borrar Jugador',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        scrollable: true,
+        content: ErasePlayerModal(
+          playerUid: 'Prueba de envío de datos',
+        ),
+      ),
+    );
   }
 }

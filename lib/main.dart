@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:playmax_app_1/config/app_theme.dart';
 import 'package:playmax_app_1/config/router.dart';
 import 'package:url_strategy/url_strategy.dart';
 
@@ -19,10 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'PlayMax Active Players',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.buildAppTheme(),
       routerConfig: RouterInitialConfig.router,
     );
   }

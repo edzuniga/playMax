@@ -24,12 +24,20 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
 
   @override
   Widget build(BuildContext context) {
-    Size screenSize = MediaQuery.of(context).size;
-
     return Form(
       key: _formKey,
-      child: SizedBox(
-        width: screenSize.width * 0.9,
+      child: Container(
+        constraints: const BoxConstraints(
+          minWidth: 600,
+        ),
+        padding: const EdgeInsets.all(
+          20,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        //width: 600,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -163,14 +171,28 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                                 end: _endTime!));
                         Navigator.pop(context);
                       } else {
-                        Fluttertoast.showToast(
-                            msg: "La hora de fin debe ser mayor a la de inicio",
-                            toastLength: Toast.LENGTH_LONG,
-                            gravity: ToastGravity.CENTER,
-                            timeInSecForIosWeb: 1,
-                            backgroundColor: Colors.red,
-                            textColor: Colors.white,
-                            fontSize: 16.0);
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text(
+                            'La hora de fin debe ser mayor a la de inicio',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ));
+
+                        /*Fluttertoast.showToast(
+                              msg: "La hora de fin debe ser mayor a la de inicio",
+                              toastLength: Toast.LENGTH_LONG,
+                              gravity: ToastGravity.CENTER,
+                              timeInSecForIosWeb: 1,
+                              backgroundColor: Colors.red,
+                              textColor: Colors.white,
+                              fontSize: 16.0); */
                       }
                     }
                   },
