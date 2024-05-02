@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';

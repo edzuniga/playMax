@@ -1,20 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
+
 import 'package:playmax_app_1/config/routes.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/new_player_modal.dart';
 import 'package:playmax_app_1/presentation/providers/active_page_provider.dart';
 
-class DashboardLayout extends ConsumerWidget {
+class DashboardLayout extends ConsumerStatefulWidget {
   const DashboardLayout({required this.child, super.key});
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardLayout> createState() => _DashboardLayoutState();
+}
+
+typedef NavigationFunction = void Function(BuildContext context);
+
+class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
+  @override
+  Widget build(BuildContext context) {
+    //Provider de la página activa
     int pageIndex = ref.watch(activePageProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Jugadores ACTIVOS / INACTIVOS'),
+        title: const Text(
+          'Jugadores ACTIVOS / INACTIVOS',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(
@@ -24,8 +38,30 @@ class DashboardLayout extends ConsumerWidget {
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white12,
               ),
-              onPressed: () {
-                context.goNamed(Routes.login);
+              onPressed: () async {
+                ScaffoldMessengerState scaffoldMessenger =
+                    ScaffoldMessenger.of(context);
+
+                String trySignOutMessage =
+                    await ref.read(authStateProvider.notifier).tryLogout();
+
+                if (trySignOutMessage == 'loggedOut') {
+                  navigateTo(Routes.login);
+                } else {
+                  scaffoldMessenger.clearSnackBars();
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text(
+                        'Ocurrió un error!! Pruebe más tarde -> $trySignOutMessage',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }
               },
               icon: const Icon(
                 Icons.logout_outlined,
@@ -35,7 +71,7 @@ class DashboardLayout extends ConsumerWidget {
           )
         ],
       ),
-      body: child,
+      body: widget.child,
       floatingActionButton: pageIndex == 0
           ? FloatingActionButton(
               backgroundColor: Colors.white,
@@ -87,5 +123,9 @@ class DashboardLayout extends ConsumerWidget {
 
   void _navigateTo(BuildContext context, String pageName) {
     context.goNamed(pageName);
+  }
+
+  void navigateTo(String name) {
+    context.goNamed(name);
   }
 }

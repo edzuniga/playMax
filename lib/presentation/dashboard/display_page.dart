@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -39,27 +38,29 @@ class _DisplayPageState extends State<DisplayPage> {
         height: double.infinity,
         child: Row(
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                const Gap(20),
-                SizedBox(
-                  width: 200,
-                  child: Image.asset('assets/img/logo_playmax.png'),
-                ),
-                const Gap(80),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
+            SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Gap(20),
+                  SizedBox(
+                    width: 200,
+                    child: Image.asset('assets/img/logo_playmax.png'),
                   ),
-                  width: screenSize.width * 0.4,
-                  height: 400,
-                  child: YoutubePlayer(
-                    controller: _youtubeController,
-                    aspectRatio: 16 / 9,
+                  const Gap(80),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                    ),
+                    width: screenSize.width * 0.4,
+                    height: 400,
+                    child: YoutubePlayer(
+                      controller: _youtubeController,
+                      aspectRatio: 16 / 9,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             Expanded(
                 child: Container(

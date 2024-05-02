@@ -1,21 +1,28 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/config/routes.dart';
+import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
+  //Instancia de supabase
+  final supabase = Supabase.instance.client;
   //Controlador para el switch
-  bool _switchValue = false;
+  bool _isSwitchEnabled = false;
+  bool _isTryingLogin = false;
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -148,12 +155,12 @@ class _LoginPageState extends State<LoginPage> {
                               scale: 0.7,
                               child: CupertinoSwitch(
                                 // This bool value toggles the switch.
-                                value: _switchValue,
+                                value: _isSwitchEnabled,
                                 activeColor: AppColors.kStrongPink,
                                 onChanged: (bool? value) {
                                   // This is called when the user toggles the switch.
                                   setState(() {
-                                    _switchValue = value ?? false;
+                                    _isSwitchEnabled = value ?? false;
                                   });
                                 },
                               ),
@@ -189,12 +196,24 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: AppColors.kStrongPink,
                     ),
                     onPressed: () {
-                      _tryLogin();
+                      (_isTryingLogin)
+                          ? null
+                          : _tryLogin(
+                              email: _emailController.text,
+                              password: _passwordController.text);
                     },
-                    child: const Text(
-                      'Ingresar',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: (!_isTryingLogin)
+                        ? const Text(
+                            'Ingresar',
+                            style: TextStyle(color: Colors.white),
+                          )
+                        : SpinPerfect(
+                            infinite: true,
+                            child: const Icon(
+                              Icons.refresh_outlined,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
                 const Gap(40),
@@ -224,9 +243,48 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _tryLogin() {
+  void _tryLogin({required String email, required String password}) async {
     if (_loginFormKey.currentState!.validate()) {
-      context.goNamed(Routes.activePlayer);
+      //Poner la app en estado de espera
+      setState(() {
+        _isTryingLogin = true;
+      });
+      //Probar el login desde el manejador de estado
+      String tryLoginReply = await ref
+          .read(authStateProvider.notifier)
+          .tryLogin(email: email, password: password);
+
+      //Implementación dependiendo la respuesta obtenida
+      if (tryLoginReply == 'loggedIn') {
+        setState(() {
+          _isTryingLogin = false;
+        });
+        if (!mounted) return;
+        context.goNamed(Routes.activePlayer);
+      } else {
+        //Respuesta de NO LoggedIn
+        setState(() {
+          _isTryingLogin = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        String errorMessage = tryLoginReply;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              (errorMessage != 'Invalid login credentials')
+                  ? errorMessage
+                  : 'Revise su correo y contraseña!!',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 }
