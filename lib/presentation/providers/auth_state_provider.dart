@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:playmax_app_1/presentation/providers/user_info_provider.dart';
 part 'auth_state_provider.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -13,6 +13,22 @@ class AuthState extends _$AuthState {
   //isLoggedIn (false by default)
   bool build() {
     return false;
+  }
+
+  //Check auth status
+  Future<int> chechAuthStatus() async {
+    //1 = AUTHENTICATED
+    //2 = NOT AUTHENTICATED
+    final supabase = Supabase.instance.client;
+    final session = supabase.auth.currentSession;
+
+    if (session != null) {
+      state = true;
+      return 1;
+    } else {
+      state = false;
+      return 2;
+    }
   }
 
   //Try loggin method
@@ -32,8 +48,11 @@ class AuthState extends _$AuthState {
           .eq('uid_users', userUid)
           .single();
 
-      //Store the user data in state manager
-      ref.read(userInfoProvider.notifier).setUserInfo(userData);
+      //Store retrieved data in sharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('name', userData['name']);
+      await prefs.setString('email', userData['email']);
+      await prefs.setInt('rol', userData['rol']);
 
       state = true;
       return 'loggedIn';
@@ -45,8 +64,10 @@ class AuthState extends _$AuthState {
 
   //Logout method
   Future<String> tryLogout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut(); //logout
+      await prefs.clear(); //clear stored data
       return 'loggedOut';
     } on AuthException catch (e) {
       return e.message;

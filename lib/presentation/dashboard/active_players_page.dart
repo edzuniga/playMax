@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -28,7 +27,7 @@ class ActivePlayersPage extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async {
         await Future.delayed(const Duration(seconds: 2));
-        //TODO construir el refresacamiento del listado
+        //TODO construir el refrescamiento del listado
       },
       child: ListView.builder(
         itemCount: activePlayersList.length,
