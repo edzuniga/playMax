@@ -6,4 +6,5 @@ class Routes {
   //Dashboard route names
   static const activePlayer = 'active_players';
   static const display = 'display';
+  static const users = 'users';
 }

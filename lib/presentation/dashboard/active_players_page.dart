@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
@@ -17,69 +16,11 @@ class ActivePlayersPage extends ConsumerWidget {
     //screen size
     Size screenSize = MediaQuery.of(context).size;
 
-    return (kIsWeb)
-        ? webScreen(activePlayersList, screenSize)
-        : mobileScreen(activePlayersList);
-  }
-
-  //MOBILE SCREEN
-  RefreshIndicator mobileScreen(List<PlayerModel> activePlayersList) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 2));
-        //TODO construir el refrescamiento del listado
-      },
-      child: ListView.builder(
-        itemCount: activePlayersList.length,
-        itemBuilder: (BuildContext ctx, int i) {
-          String formattedStartTime =
-              _getFormattedTime(activePlayersList[i].start);
-          String formattedEndTime = _getFormattedTime(activePlayersList[i].end);
-          return Slidable(
-            endActionPane: ActionPane(
-              motion: const DrawerMotion(),
-              children: [
-                SlidableAction(
-                  borderRadius: BorderRadius.circular(5),
-                  onPressed: (context) {},
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  icon: Icons.delete,
-                  label: 'Borrar',
-                ),
-                SlidableAction(
-                  borderRadius: BorderRadius.circular(5),
-                  onPressed: (context) {},
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  icon: Icons.edit,
-                  label: 'Editar',
-                ),
-              ],
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(activePlayersList[i].name),
-              subtitle:
-                  Text("Inicio: $formattedStartTime \nFin: $formattedEndTime"),
-              trailing: (activePlayersList[i].isActive)
-                  ? const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                    )
-                  : const Icon(
-                      Icons.highlight_remove_outlined,
-                      color: Colors.red,
-                    ),
-            ),
-          );
-        },
-      ),
-    );
+    return buildScreen(activePlayersList, screenSize);
   }
 
   //WEB SCREEN
-  Row webScreen(List<PlayerModel> activePlayersList, Size screenSize) {
+  Row buildScreen(List<PlayerModel> activePlayersList, Size screenSize) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [

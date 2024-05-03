@@ -6,6 +6,7 @@ import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
 import 'package:playmax_app_1/config/routes.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/new_player_modal.dart';
 import 'package:playmax_app_1/presentation/providers/active_page_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardLayout extends ConsumerStatefulWidget {
   const DashboardLayout({required this.child, super.key});
@@ -19,9 +20,45 @@ typedef NavigationFunction = void Function(BuildContext context);
 
 class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   bool _isTryingLogout = false;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getRol();
+  }
+
+  void _getRol() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? rol = prefs.getInt('rol');
+    if (rol != null && rol == 1) {
+      setState(() {
+        _isAdmin = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<BottomNavigationBarItem> bottomItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.supervised_user_circle_outlined),
+        label: 'Jugadores',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.monitor),
+        label: 'Visualización',
+      ),
+    ];
+
+    // Conditionally add an item if _isAdmin is true
+    if (_isAdmin) {
+      bottomItems.add(const BottomNavigationBarItem(
+        icon: Icon(Icons.group),
+        label: 'Usuarios',
+      ));
+    }
+
     //Provider de la página activa
     int pageIndex = ref.watch(activePageProvider);
 
@@ -122,20 +159,11 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   _navigateTo(context, Routes.activePlayer);
                 } else if (i == 1) {
                   _navigateTo(context, Routes.display);
+                } else if (i == 2) {
+                  _navigateTo(context, Routes.users);
                 }
               },
-              items: const [
-                BottomNavigationBarItem(
-                    icon: Icon(
-                      Icons.supervised_user_circle_outlined,
-                    ),
-                    label: 'Jugadores'),
-                BottomNavigationBarItem(
-                    icon: Icon(
-                      Icons.monitor,
-                    ),
-                    label: 'Visualización'),
-              ],
+              items: bottomItems,
             ),
           );
   }

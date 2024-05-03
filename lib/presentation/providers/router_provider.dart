@@ -1,16 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:playmax_app_1/config/routes.dart';
-import 'package:playmax_app_1/presentation/auth/auth_layout.dart';
-import 'package:playmax_app_1/presentation/auth/login_page.dart';
-import 'package:playmax_app_1/presentation/auth/recovery_page.dart';
-import 'package:playmax_app_1/presentation/dashboard/active_players_page.dart';
-import 'package:playmax_app_1/presentation/dashboard/dashboard_layout.dart';
-import 'package:playmax_app_1/presentation/dashboard/display_page.dart';
+import 'package:playmax_app_1/presentation/auth/export_auth_pages.dart';
+import 'package:playmax_app_1/presentation/dashboard/export_dashboard_pages.dart';
+import 'package:playmax_app_1/presentation/dashboard/users_page.dart';
 import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
 import 'package:playmax_app_1/presentation/shared_screens/error_page.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'router_provider.g.dart';
 
 @riverpod
@@ -86,10 +84,24 @@ GoRouter appRouter(Ref ref) {
               ),
             ),
           ),
+          GoRoute(
+            name: Routes.users,
+            path: '/users',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              child: const UsersPage(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) =>
+                      FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            ),
+          ),
         ],
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
+      /*
       // Obtén el estado de autenticación desde el provider
       final isAuthenticated = ref.read(authStateProvider);
 
@@ -114,7 +126,7 @@ GoRouter appRouter(Ref ref) {
       }
 
       // No se necesita redirección
-      return null;
+      return null; */
     },
   );
 }
