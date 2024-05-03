@@ -6,11 +6,22 @@ import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 
-class ActivePlayersPage extends ConsumerWidget {
+class ActivePlayersPage extends ConsumerStatefulWidget {
   const ActivePlayersPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ActivePlayersPage> createState() => _ActivePlayersPageState();
+}
+
+class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(activePlayersProvider.notifier).fetchActiveUsers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     //Get the active players provider
     final activePlayersList = ref.watch(activePlayersProvider);
     //screen size

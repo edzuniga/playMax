@@ -11,7 +11,7 @@ class TituloColumnaTabla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: ancho,
       child: Text(
         titulo,

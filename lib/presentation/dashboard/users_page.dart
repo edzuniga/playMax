@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:playmax_app_1/presentation/dashboard/modals/add_user_modal.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/presentation/widgets/titulo_tabla_widget.dart';
 
@@ -10,6 +12,15 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
+  final supabase = Supabase.instance.client;
+  late PostgrestFilterBuilder<List<Map<String, dynamic>>> _getUsers;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUsers = supabase.from('users').select();
+  }
+
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
@@ -18,7 +29,7 @@ class _UsersPageState extends State<UsersPage> {
         padding: const EdgeInsets.symmetric(horizontal: 30),
         child: Container(
           width: screenSize.width * 0.9,
-          height: 700,
+          height: screenSize.height * 0.8,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             color: Colors.white,
@@ -46,7 +57,9 @@ class _UsersPageState extends State<UsersPage> {
                               borderRadius:
                                   BorderRadius.all(Radius.circular(5))),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          _addUser();
+                        },
                         child: const Text(
                           'Agregar usuario',
                           style: TextStyle(color: Colors.white),
@@ -89,48 +102,103 @@ class _UsersPageState extends State<UsersPage> {
                 ),
               ),
               Expanded(
-                  child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      itemCount: 10,
-                      itemBuilder: (context, index) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            SizedBox(
-                              width: screenSize.width * 0.05,
-                              child: Text('${index + 1}'),
-                            ),
-                            SizedBox(
-                              width: screenSize.width * 0.35,
-                              child: const Text(
-                                  'Aviazas Abimelec Espinoza Banegas'),
-                            ),
-                            SizedBox(
-                              width: screenSize.width * 0.25,
-                              child: const Text('ejemplo@ejemplolargo.com'),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade200,
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              padding: const EdgeInsets.all(5),
-                              width: screenSize.width * 0.1,
-                              child: const Text('operador'),
-                            ),
-                            SizedBox(
-                              width: screenSize.width * 0.05,
-                              child: TextButton(
-                                onPressed: () {},
-                                child: const Text('...'),
-                              ),
-                            ),
-                          ],
-                        );
-                      })),
+                child: FutureBuilder(
+                  future: _getUsers,
+                  builder: (context, AsyncSnapshot snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                        child: Text('Ocurrió un error, purueba más tarde.'),
+                      );
+                    }
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (!snapshot.hasData) {
+                      return const Center(
+                        child: Text(
+                            'No hay usuario aún. Agrega uno para visualizarlo.'),
+                      );
+                    } else {
+                      List<Map<String, dynamic>> usersList = snapshot.data;
+
+                      return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          itemCount: usersList.length,
+                          itemBuilder: (context, index) {
+                            final Map<String, dynamic> user = usersList[index];
+                            //String de rol condicionado
+                            String rolString = '';
+                            Color rolColor = Colors.purple.shade100;
+                            switch (user['rol']) {
+                              case 1:
+                                rolString = 'Admin';
+                                rolColor = Colors.blue.shade100;
+                                break;
+                              case 2:
+                                rolString = 'Operador';
+                                break;
+                            }
+
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SizedBox(
+                                  width: screenSize.width * 0.05,
+                                  child: Text('${index + 1}'),
+                                ),
+                                SizedBox(
+                                  width: screenSize.width * 0.35,
+                                  child: Text(user['name']),
+                                ),
+                                SizedBox(
+                                  width: screenSize.width * 0.25,
+                                  child: Text(user['email']),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: rolColor,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  padding: const EdgeInsets.all(5),
+                                  width: screenSize.width * 0.1,
+                                  child: Text(rolString),
+                                ),
+                                SizedBox(
+                                  width: screenSize.width * 0.05,
+                                  child: TextButton(
+                                    onPressed: () {},
+                                    child: const Text('...'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          });
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _addUser() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => const AlertDialog(
+        scrollable: true,
+        title: Text(
+          'Agregar usuario',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: AddUserModal(),
       ),
     );
   }

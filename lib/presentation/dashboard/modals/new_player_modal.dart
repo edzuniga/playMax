@@ -165,6 +165,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                       if (_checkSelectedTimeOfDay()) {
                         ref.read(activePlayersProvider.notifier).addPlayer(
                             PlayerModel(
+                                idActiveUsers: 1,
                                 name: _nameController.text,
                                 start: _startTime!,
                                 end: _endTime!));
