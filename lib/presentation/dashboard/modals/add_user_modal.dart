@@ -184,8 +184,8 @@ class _AddUserModalState extends State<AddUserModal> {
                       backgroundColor: AppColors.kStrongPink,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5))),
-                  onPressed: () {
-                    _tryAddUser();
+                  onPressed: () async {
+                    await _tryAddUser();
                   },
                   child: const Text(
                     'Agregar usuario',
@@ -208,17 +208,26 @@ class _AddUserModalState extends State<AddUserModal> {
     super.dispose();
   }
 
-  void _tryAddUser() async {
+  Future<void> _tryAddUser() async {
     if (_newUserFormKey.currentState!.validate()) {
       try {
-/*
+        final res = await _supabase.auth.admin.createUser(AdminUserAttributes(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+          emailConfirm: true,
+        ));
+
+        String userUid = res.user!.id;
+
         //Agregar la info a la tabla de users
         await _supabase.from('users').insert({
           'id_users': userUid,
           'name': _nameController.text,
           'email': _emailController.text.trim(),
           'rol': _rolController,
-        }); */
+        });
+        if (!mounted) return;
+        context.pop();
       } on AuthException catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).clearSnackBars();

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/data/player_model.dart';
-import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NewPlayerModal extends ConsumerStatefulWidget {
   const NewPlayerModal({super.key});
@@ -13,6 +14,7 @@ class NewPlayerModal extends ConsumerStatefulWidget {
 }
 
 class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
+  final supabase = Supabase.instance.client;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _startController = TextEditingController();
@@ -160,16 +162,17 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       if (_checkSelectedTimeOfDay()) {
-                        ref.read(activePlayersProvider.notifier).addPlayer(
-                            PlayerModel(
-                                idActiveUsers: 1,
-                                name: _nameController.text,
-                                start: _startTime!,
-                                end: _endTime!));
-                        Navigator.pop(context);
+                        final player = PlayerModel(
+                          name: _nameController.text,
+                          start: _startTime!,
+                          end: _endTime!,
+                          isActive: true,
+                        );
+                        //*Try to insert in table
+                        await _tryToInsertPlayer(player);
                       } else {
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context)
@@ -184,15 +187,6 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                             textAlign: TextAlign.center,
                           ),
                         ));
-
-                        /*Fluttertoast.showToast(
-                              msg: "La hora de fin debe ser mayor a la de inicio",
-                              toastLength: Toast.LENGTH_LONG,
-                              gravity: ToastGravity.CENTER,
-                              timeInSecForIosWeb: 1,
-                              backgroundColor: Colors.red,
-                              textColor: Colors.white,
-                              fontSize: 16.0); */
                       }
                     }
                   },
@@ -228,5 +222,29 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
     int startTimeInMinutes = _startTime!.hour * 60 + _startTime!.minute;
     int endTimeInMinutes = _endTime!.hour * 60 + _endTime!.minute;
     return endTimeInMinutes > startTimeInMinutes;
+  }
+
+  Future<void> _tryToInsertPlayer(PlayerModel player) async {
+    Map playerMap = player.toJson();
+    try {
+      await supabase.from('active_players').insert(playerMap);
+      if (!mounted) return;
+      context.pop();
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      context.pop();
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(
+          'Ocurrió un error al intentar agregar al jugador -> ${e.message}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ));
+    }
   }
 }

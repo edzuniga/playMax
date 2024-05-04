@@ -7,7 +7,6 @@ import 'package:playmax_app_1/config/routes.dart';
 import 'package:playmax_app_1/presentation/auth/export_auth_pages.dart';
 import 'package:playmax_app_1/presentation/dashboard/export_dashboard_pages.dart';
 import 'package:playmax_app_1/presentation/dashboard/users_page.dart';
-import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
 import 'package:playmax_app_1/presentation/shared_screens/error_page.dart';
 part 'router_provider.g.dart';
 
