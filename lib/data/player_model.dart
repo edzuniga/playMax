@@ -4,6 +4,7 @@ import 'package:playmax_app_1/domain/player.dart';
 class PlayerModel extends Player {
   PlayerModel({
     super.idActiveUsers,
+    super.createdAt,
     required super.name,
     required super.start,
     required super.end,
@@ -20,6 +21,7 @@ class PlayerModel extends Player {
 
     return PlayerModel(
       idActiveUsers: json["id_active_users"],
+      createdAt: json["created_at"],
       name: json["name"],
       start: parseTime(json["inicio"]),
       end: parseTime(json["fin"]),
@@ -36,6 +38,7 @@ class PlayerModel extends Player {
     }
 
     return {
+      "created_at": createdAt,
       "name": name,
       "inicio": timeToString(start),
       "fin": timeToString(end),

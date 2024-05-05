@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -6,7 +8,6 @@ import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/update_player_modal.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
-import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final supabase = Supabase.instance.client;
@@ -19,118 +20,239 @@ class ActivePlayersPage extends ConsumerStatefulWidget {
 }
 
 class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
+  late List<PlayerModel> jugadoresGlobal;
+  late List<PlayerModel> jugadoresInactivos;
+
   final stream = supabase
       .from('active_players')
-      .stream(primaryKey: ['id_active_users']).gte(
-    'created_at',
-    DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-  );
+      .stream(primaryKey: ['id_active_users'])
+      .gte(
+        'created_at',
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
+      )
+      .order('fin', ascending: true);
 
   @override
   void initState() {
     super.initState();
+    jugadoresGlobal = [];
+    jugadoresInactivos = [];
+  }
+
+  @override
+  void dispose() {
+    //Dispose any timer to avoid memory leak
+    for (var jugador in jugadoresGlobal) {
+      jugador.disposeTimer();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    //Get the active players provider
-    final activePlayersList = ref.watch(activePlayersProvider);
-    //screen size
     Size screenSize = MediaQuery.of(context).size;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 10,
+      ),
+      child: StreamBuilder(
+        stream: stream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-    return buildScreen(activePlayersList, screenSize);
-  }
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('Ocurrió un error al querer cargar los jugadores!!'),
+            );
+          }
 
-  //SCREEN
-  Row buildScreen(List<PlayerModel> activePlayersList, Size screenSize) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 10,
-          ),
-          width: screenSize.width * 0.4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(
-                height: 20,
-                child: Text(
-                  'Usuarios Activos',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text('Aún no ha agregado jugadores el día de hoy!!'),
+            );
+          } else {
+            List<Map<String, dynamic>> jugadoresMap = snapshot.data!;
+            //Borrar listados de jugadores
+            jugadoresGlobal.clear();
+            jugadoresInactivos.clear();
+            for (var jugador in jugadoresMap) {
+              //Poblar el listado
+              if (jugador['is_active'] == true) {
+                jugadoresGlobal.add(PlayerModel.fromJson(jugador));
+              } else {
+                jugadoresInactivos.add(PlayerModel.fromJson(jugador));
+              }
+            }
+
+            //*--------LÓGICA PARA AGREGARLE EL TIMER A CADA JUGADOR
+            void setupTimer(PlayerModel player) {
+              //?need to convert each TimeOfDay to DateTime to compare them
+              DateTime now = DateTime.now();
+              DateTime endDateTime = DateTime(now.year, now.month, now.day,
+                  player.end.hour, player.end.minute);
+
+              //?calculate difference (cuánto le queda con respecto
+              //? a la hora ACTUAL)
+              int secondsToEnd = endDateTime.difference(now).inSeconds;
+              if (secondsToEnd > 0) {
+                player.timer
+                    ?.cancel(); //Cancelar cualquier timer que haya en ese jugador
+                player.timer = Timer(Duration(seconds: secondsToEnd),
+                    () => updatePlayerStatus(player));
+              }
+            }
+
+            for (var jugador in jugadoresGlobal) {
+              setupTimer(jugador);
+            }
+
+            //*---------LÓGICA PARA AGREGARLE EL TIMER A CADA JUGADOR
+
+            return Row(
+              children: [
+                SizedBox(
+                  width: screenSize.width * 0.45,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Usuarios Activos',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: jugadoresGlobal.length,
+                          itemBuilder: (BuildContext ctx, int i) {
+                            PlayerModel jugador = jugadoresGlobal[i];
+
+                            String formattedStartTime =
+                                FormattedTime.getFormattedTime(jugador.start);
+
+                            String formattedEndTime =
+                                FormattedTime.getFormattedTime(jugador.end);
+
+                            //Condición para solamente elegir a los activos
+                            return Slidable(
+                              endActionPane: ActionPane(
+                                motion: const DrawerMotion(),
+                                children: [
+                                  SlidableAction(
+                                    borderRadius: BorderRadius.circular(5),
+                                    onPressed: (context) {
+                                      _erasePlayer(context, jugador);
+                                    },
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    icon: Icons.delete,
+                                  ),
+                                  SlidableAction(
+                                    borderRadius: BorderRadius.circular(5),
+                                    onPressed: (context) {
+                                      _updatePlayer(context, jugador);
+                                    },
+                                    backgroundColor: Colors.deepPurple,
+                                    foregroundColor: Colors.white,
+                                    icon: Icons.edit,
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(5.0),
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.white24,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8)),
+                                  child: ListTile(
+                                    dense: true,
+                                    leading: Icon(
+                                      Icons.person,
+                                      color: jugador.isActive
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                    title: Text(
+                                      jugador.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    subtitle: RichText(
+                                      text: TextSpan(
+                                          text: 'Inicio:',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: ' $formattedStartTime',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            const TextSpan(
+                                              text: '\nFin:',
+                                            ),
+                                            TextSpan(
+                                              text: ' $formattedEndTime',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ]),
+                                    ),
+                                    trailing: Icon(
+                                      Icons.check_circle,
+                                      color: jugador.isActive
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Expanded(
-                child: StreamBuilder(
-                  stream: stream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
+                const VerticalDivider(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Usuarios sin tiempo',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: jugadoresInactivos.length,
+                          itemBuilder: (BuildContext ctx, int i) {
+                            PlayerModel jugadorInactivo = jugadoresInactivos[i];
 
-                    if (snapshot.hasError) {
-                      return const Center(
-                        child: Text(
-                            'Ocurrió un error al querer cargar los jugadores!!'),
-                      );
-                    }
+                            String formattedStartTime =
+                                FormattedTime.getFormattedTime(
+                                    jugadorInactivo.start);
 
-                    if (!snapshot.hasData) {
-                      return const Center(
-                        child: Text(
-                            'Aún no ha agregado jugadores el día de hoy!!'),
-                      );
-                    } else {
-                      List<Map<String, dynamic>> jugadoresMap = snapshot.data!;
-                      List<PlayerModel> jugadores = [];
-                      for (var jugador in jugadoresMap) {
-                        jugadores.add(PlayerModel.fromJson(jugador));
-                      }
-                      return ListView.builder(
-                        itemCount: jugadores.length,
-                        itemBuilder: (BuildContext ctx, int i) {
-                          PlayerModel jugador = jugadores[i];
+                            String formattedEndTime =
+                                FormattedTime.getFormattedTime(
+                                    jugadorInactivo.end);
 
-                          String formattedStartTime =
-                              FormattedTime.getFormattedTime(jugador.start);
-
-                          String formattedEndTime =
-                              FormattedTime.getFormattedTime(jugador.end);
-
-                          //Condición para solamente elegir a los activos
-                          return Slidable(
-                            endActionPane: ActionPane(
-                              motion: const DrawerMotion(),
-                              children: [
-                                SlidableAction(
-                                  borderRadius: BorderRadius.circular(5),
-                                  onPressed: (context) {
-                                    _erasePlayer(context, jugador);
-                                  },
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.delete,
-                                ),
-                                SlidableAction(
-                                  borderRadius: BorderRadius.circular(5),
-                                  onPressed: (context) {
-                                    _updatePlayer(context, jugador);
-                                  },
-                                  backgroundColor: Colors.deepPurple,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.edit,
-                                ),
-                              ],
-                            ),
-                            child: Padding(
+                            //Condición para solamente elegir a los activos
+                            return Padding(
                               padding: const EdgeInsets.all(5.0),
                               child: Container(
                                 width: double.infinity,
@@ -143,10 +265,10 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                                   dense: true,
                                   leading: const Icon(
                                     Icons.person,
-                                    color: Colors.green,
+                                    color: Colors.red,
                                   ),
                                   title: Text(
-                                    jugador.name,
+                                    jugadorInactivo.name,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -179,134 +301,22 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                                   ),
                                   trailing: const Icon(
                                     Icons.check_circle,
-                                    color: Colors.green,
+                                    color: Colors.red,
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: screenSize.height, child: const VerticalDivider()),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 10,
-          ),
-          width: screenSize.width * 0.4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(
-                height: 20,
-                child: Text(
-                  'Usuarios Inactivos',
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: activePlayersList.length,
-                  itemBuilder: (BuildContext ctx, int i) {
-                    String formattedStartTime = FormattedTime.getFormattedTime(
-                        activePlayersList[i].start);
-                    String formattedEndTime = FormattedTime.getFormattedTime(
-                        activePlayersList[i].end);
-
-                    //Condición para solamente elegir a los activos
-                    return Slidable(
-                      startActionPane: ActionPane(
-                        motion: const DrawerMotion(),
-                        children: [
-                          SlidableAction(
-                            borderRadius: BorderRadius.circular(5),
-                            onPressed: (context) {},
-                            backgroundColor: Colors.deepPurple,
-                            foregroundColor: Colors.white,
-                            icon: Icons.edit,
-                          ),
-                          SlidableAction(
-                            borderRadius: BorderRadius.circular(5),
-                            onPressed: (context) {},
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            icon: Icons.delete,
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(5.0),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.white24,
-                              ),
-                              borderRadius: BorderRadius.circular(8)),
-                          child: ListTile(
-                            dense: true,
-                            leading: const Icon(
-                              Icons.person,
-                              color: Colors.red,
-                            ),
-                            title: Text(
-                              activePlayersList[i].name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            subtitle: RichText(
-                              text: TextSpan(
-                                  text: 'Inicio:',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: ' $formattedStartTime',
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    const TextSpan(
-                                      text: '\nFin:',
-                                    ),
-                                    TextSpan(
-                                      text: ' $formattedEndTime',
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ]),
-                            ),
-                            trailing: const Icon(
-                              Icons.check_circle,
-                              color: Colors.red,
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ],
+              ],
+            );
+          }
+        },
+      ),
     );
   }
 
@@ -346,5 +356,32 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
         ),
       ),
     );
+  }
+
+  Future<void> updatePlayerStatus(PlayerModel player) async {
+    try {
+      await supabase.from('active_players').update({
+        'is_active': false,
+      }).eq('id_active_users', player.idActiveUsers!);
+      setState(() {
+        jugadoresInactivos.insert(0, player);
+        jugadoresGlobal.remove(player);
+      });
+      if (!mounted) return;
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(
+          'Ocurrió un error al intentar editar al jugador -> ${e.message}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ));
+    }
   }
 }

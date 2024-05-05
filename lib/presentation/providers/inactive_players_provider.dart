@@ -1,16 +1,16 @@
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-part 'active_players_provider.g.dart';
+part 'inactive_players_provider.g.dart';
 
 @riverpod
-class ActivePlayers extends _$ActivePlayers {
+class InactivePlayersList extends _$InactivePlayersList {
   @override
   List<PlayerModel> build() {
-    List<PlayerModel> activePlayersList = [];
-    return activePlayersList;
+    return [];
   }
 
-  void addPlayer(PlayerModel player) {
+  //Agregar jugador inactivo al estado
+  void addInactivePlayer(PlayerModel player) {
     state = [...state, player];
   }
 }

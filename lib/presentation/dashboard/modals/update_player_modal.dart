@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -16,6 +17,7 @@ class UpdatePlayerModal extends ConsumerStatefulWidget {
 }
 
 class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
+  bool isTryingToUpdatePlayer = false;
   final supabase = Supabase.instance.client;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
@@ -188,40 +190,52 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                   ),
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      if (FormattedTime.checkSelectedTimeOfDay(
-                          _startTime!, _endTime!)) {
-                        final player = PlayerModel(
-                          idActiveUsers: widget.jugadorRecibido.idActiveUsers,
-                          name: _nameController.text,
-                          start: _startTime!,
-                          end: _endTime!,
-                          isActive: true,
-                        );
-                        //*Try to update the player
-                        await _tryToUpdatePlayer(player);
-                      } else {
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                          backgroundColor: Colors.red,
-                          content: Text(
-                            'La hora de fin debe ser mayor a la de inicio',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
+                  onPressed: (isTryingToUpdatePlayer)
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            if (FormattedTime.checkSelectedTimeOfDay(
+                                _startTime!, _endTime!)) {
+                              final player = PlayerModel(
+                                idActiveUsers:
+                                    widget.jugadorRecibido.idActiveUsers,
+                                createdAt: widget.jugadorRecibido.createdAt,
+                                name: _nameController.text,
+                                start: _startTime!,
+                                end: _endTime!,
+                                isActive: true,
+                              );
+                              //*Try to update the player
+                              await _tryToUpdatePlayer(player);
+                            } else {
+                              ScaffoldMessenger.of(context).clearSnackBars();
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                backgroundColor: Colors.red,
+                                content: Text(
+                                  'La hora de fin debe ser mayor a la de inicio',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ));
+                            }
+                          }
+                        },
+                  child: (isTryingToUpdatePlayer)
+                      ? SpinPerfect(
+                          infinite: true,
+                          child: const Icon(
+                            Icons.refresh_outlined,
+                            color: Colors.white,
                           ),
-                        ));
-                      }
-                    }
-                  },
-                  child: const Text(
-                    'Actualizar jugador',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                        )
+                      : const Text(
+                          'Actualizar jugador',
+                          style: TextStyle(color: Colors.white),
+                        ),
                 )
               ],
             ),
@@ -232,15 +246,18 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   }
 
   Future<void> _tryToUpdatePlayer(PlayerModel player) async {
+    setState(() => isTryingToUpdatePlayer = true);
     Map playerMap = player.toJson();
     try {
       await supabase
           .from('active_players')
           .update(playerMap)
           .eq('id_active_users', player.idActiveUsers!);
+      setState(() => isTryingToUpdatePlayer = false);
       if (!mounted) return;
       context.pop();
     } on PostgrestException catch (e) {
+      setState(() => isTryingToUpdatePlayer = false);
       if (!mounted) return;
       context.pop();
       ScaffoldMessenger.of(context).clearSnackBars();

@@ -46,7 +46,7 @@ class _DisplayPageState extends State<DisplayPage> {
                     width: 200,
                     child: Image.asset('assets/img/logo_playmax.png'),
                   ),
-                  const Gap(80),
+                  const Gap(20),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 15,

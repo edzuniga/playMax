@@ -1,26 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'active_players_provider.dart';
+part of 'inactive_players_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$activePlayersHash() => r'0f144b5f0b23d22f06f878081bc0aa1f917a7d15';
+String _$inactivePlayersListHash() =>
+    r'c07ab7761bd276420c37d0d74bfa146817d96850';
 
-/// See also [ActivePlayers].
-@ProviderFor(ActivePlayers)
-final activePlayersProvider =
-    AutoDisposeNotifierProvider<ActivePlayers, List<PlayerModel>>.internal(
-  ActivePlayers.new,
-  name: r'activePlayersProvider',
+/// See also [InactivePlayersList].
+@ProviderFor(InactivePlayersList)
+final inactivePlayersListProvider = AutoDisposeNotifierProvider<
+    InactivePlayersList, List<PlayerModel>>.internal(
+  InactivePlayersList.new,
+  name: r'inactivePlayersListProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$activePlayersHash,
+      : _$inactivePlayersListHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$ActivePlayers = AutoDisposeNotifier<List<PlayerModel>>;
+typedef _$InactivePlayersList = AutoDisposeNotifier<List<PlayerModel>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

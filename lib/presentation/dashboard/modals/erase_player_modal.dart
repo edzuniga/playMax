@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +16,7 @@ class ErasePlayerModal extends StatefulWidget {
 }
 
 class _ErasePlayerModalState extends State<ErasePlayerModal> {
+  bool isTryingToErasePlayer = false;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -57,10 +59,18 @@ class _ErasePlayerModalState extends State<ErasePlayerModal> {
                 onPressed: () async {
                   await _tryDeletePlayer();
                 },
-                child: const Text(
-                  'Borrar',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: isTryingToErasePlayer
+                    ? SpinPerfect(
+                        infinite: true,
+                        child: const Icon(
+                          Icons.refresh_outlined,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Borrar',
+                        style: TextStyle(color: Colors.white),
+                      ),
               ),
             ],
           ),
@@ -70,14 +80,17 @@ class _ErasePlayerModalState extends State<ErasePlayerModal> {
   }
 
   Future<void> _tryDeletePlayer() async {
+    setState(() => isTryingToErasePlayer = true);
     try {
       await supabase
           .from('active_players')
           .delete()
           .eq('id_active_users', widget.playerInfo.idActiveUsers!);
+      setState(() => isTryingToErasePlayer = false);
       if (!mounted) return;
       context.pop();
     } on PostgrestException catch (e) {
+      setState(() => isTryingToErasePlayer = false);
       if (!mounted) return;
       context.pop();
       ScaffoldMessenger.of(context).clearSnackBars();
