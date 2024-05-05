@@ -7,22 +7,37 @@ import 'package:playmax_app_1/presentation/functions/get_formatted_time_function
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class NewPlayerModal extends ConsumerStatefulWidget {
-  const NewPlayerModal({super.key});
+class UpdatePlayerModal extends ConsumerStatefulWidget {
+  const UpdatePlayerModal({required this.jugadorRecibido, super.key});
+  final PlayerModel jugadorRecibido;
 
   @override
-  ConsumerState<NewPlayerModal> createState() => _NewPlayerModalState();
+  ConsumerState<UpdatePlayerModal> createState() => _UpdatePlayerModalState();
 }
 
-class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
+class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   final supabase = Supabase.instance.client;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _startController = TextEditingController();
-  final TextEditingController _endController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _startController;
+  late final TextEditingController _endController;
 
-  TimeOfDay? _startTime;
-  TimeOfDay? _endTime;
+  late TimeOfDay? _startTime;
+  late TimeOfDay? _endTime;
+
+  @override
+  void initState() {
+    super.initState();
+    String tiempoInicial =
+        FormattedTime.getFormattedTime(widget.jugadorRecibido.start);
+    String tiempoFinal =
+        FormattedTime.getFormattedTime(widget.jugadorRecibido.end);
+    _nameController = TextEditingController(text: widget.jugadorRecibido.name);
+    _startController = TextEditingController(text: tiempoInicial);
+    _endController = TextEditingController(text: tiempoFinal);
+    _startTime = widget.jugadorRecibido.start;
+    _endTime = widget.jugadorRecibido.end;
+  }
 
   @override
   void dispose() {
@@ -178,13 +193,14 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                       if (FormattedTime.checkSelectedTimeOfDay(
                           _startTime!, _endTime!)) {
                         final player = PlayerModel(
+                          idActiveUsers: widget.jugadorRecibido.idActiveUsers,
                           name: _nameController.text,
                           start: _startTime!,
                           end: _endTime!,
                           isActive: true,
                         );
-                        //*Try to insert in table
-                        await _tryToInsertPlayer(player);
+                        //*Try to update the player
+                        await _tryToUpdatePlayer(player);
                       } else {
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context)
@@ -203,7 +219,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                     }
                   },
                   child: const Text(
-                    'Agregar jugador',
+                    'Actualizar jugador',
                     style: TextStyle(color: Colors.white),
                   ),
                 )
@@ -215,10 +231,13 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
     );
   }
 
-  Future<void> _tryToInsertPlayer(PlayerModel player) async {
+  Future<void> _tryToUpdatePlayer(PlayerModel player) async {
     Map playerMap = player.toJson();
     try {
-      await supabase.from('active_players').insert(playerMap);
+      await supabase
+          .from('active_players')
+          .update(playerMap)
+          .eq('id_active_users', player.idActiveUsers!);
       if (!mounted) return;
       context.pop();
     } on PostgrestException catch (e) {
@@ -228,7 +247,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         backgroundColor: Colors.red,
         content: Text(
-          'Ocurrió un error al intentar agregar al jugador -> ${e.message}',
+          'Ocurrió un error al intentar editar al jugador -> ${e.message}',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,

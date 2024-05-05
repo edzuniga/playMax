@@ -100,6 +100,7 @@ GoRouter appRouter(Ref ref) {
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
+      return null;
       /*
       // Obtén el estado de autenticación desde el provider
       final isAuthenticated = ref.read(authStateProvider);

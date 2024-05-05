@@ -4,6 +4,8 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
+import 'package:playmax_app_1/presentation/dashboard/modals/update_player_modal.dart';
+import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
 import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -98,9 +100,10 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                           PlayerModel jugador = jugadores[i];
 
                           String formattedStartTime =
-                              _getFormattedTime(jugador.start);
+                              FormattedTime.getFormattedTime(jugador.start);
+
                           String formattedEndTime =
-                              _getFormattedTime(jugador.end);
+                              FormattedTime.getFormattedTime(jugador.end);
 
                           //Condición para solamente elegir a los activos
                           return Slidable(
@@ -109,14 +112,18 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                               children: [
                                 SlidableAction(
                                   borderRadius: BorderRadius.circular(5),
-                                  onPressed: _erase,
+                                  onPressed: (context) {
+                                    _erasePlayer(context, jugador);
+                                  },
                                   backgroundColor: Colors.red,
                                   foregroundColor: Colors.white,
                                   icon: Icons.delete,
                                 ),
                                 SlidableAction(
                                   borderRadius: BorderRadius.circular(5),
-                                  onPressed: (context) {},
+                                  onPressed: (context) {
+                                    _updatePlayer(context, jugador);
+                                  },
                                   backgroundColor: Colors.deepPurple,
                                   foregroundColor: Colors.white,
                                   icon: Icons.edit,
@@ -212,10 +219,10 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                 child: ListView.builder(
                   itemCount: activePlayersList.length,
                   itemBuilder: (BuildContext ctx, int i) {
-                    String formattedStartTime =
-                        _getFormattedTime(activePlayersList[i].start);
-                    String formattedEndTime =
-                        _getFormattedTime(activePlayersList[i].end);
+                    String formattedStartTime = FormattedTime.getFormattedTime(
+                        activePlayersList[i].start);
+                    String formattedEndTime = FormattedTime.getFormattedTime(
+                        activePlayersList[i].end);
 
                     //Condición para solamente elegir a los activos
                     return Slidable(
@@ -303,26 +310,12 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
     );
   }
 
-  String _getFormattedTime(TimeOfDay time) {
-    String amOrPm = 'am';
-    String formattedHour = '${time.hour}';
-    String formattedMinute = '${time.minute}';
-    if (time.hour > 12) {
-      formattedHour = (time.hour - 12).toString();
-      amOrPm = 'pm';
-    }
-    if (time.minute < 10) {
-      formattedMinute = '0${time.minute}';
-    }
-    return "$formattedHour:$formattedMinute$amOrPm";
-  }
-
-  _erase(BuildContext context) {
+  _erasePlayer(BuildContext context, PlayerModel player) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        title: Text(
+      builder: (_) => AlertDialog(
+        title: const Text(
           'Borrar Jugador',
           style: TextStyle(
             color: Colors.white,
@@ -330,7 +323,26 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
         ),
         scrollable: true,
         content: ErasePlayerModal(
-          playerUid: 'Prueba de envío de datos',
+          playerInfo: player,
+        ),
+      ),
+    );
+  }
+
+  _updatePlayer(BuildContext context, PlayerModel player) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          'Editar Jugador',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        scrollable: true,
+        content: UpdatePlayerModal(
+          jugadorRecibido: player,
         ),
       ),
     );
