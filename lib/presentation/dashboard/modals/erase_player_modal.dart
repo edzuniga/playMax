@@ -4,8 +4,10 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/data/player_model.dart';
-import 'package:playmax_app_1/presentation/dashboard/export_dashboard_pages.dart';
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+final _supabase = SupabaseManager().supabaseClient;
 
 class ErasePlayerModal extends StatefulWidget {
   const ErasePlayerModal({required this.playerInfo, super.key});
@@ -82,7 +84,7 @@ class _ErasePlayerModalState extends State<ErasePlayerModal> {
   Future<void> _tryDeletePlayer() async {
     setState(() => isTryingToErasePlayer = true);
     try {
-      await supabase
+      await _supabase
           .from('active_players')
           .delete()
           .eq('id_active_users', widget.playerInfo.idActiveUsers!);

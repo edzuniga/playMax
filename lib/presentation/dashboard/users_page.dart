@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/add_user_modal.dart';
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/presentation/widgets/titulo_tabla_widget.dart';
@@ -12,13 +13,13 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
-  final supabase = Supabase.instance.client;
+  final _supabase = SupabaseManager().supabaseClient;
   late PostgrestFilterBuilder<List<Map<String, dynamic>>> _getUsers;
 
   @override
   void initState() {
     super.initState();
-    _getUsers = supabase.from('users').select();
+    _getUsers = _supabase.from('users').select();
   }
 
   @override

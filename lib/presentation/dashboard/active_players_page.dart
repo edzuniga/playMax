@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/update_player_modal.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-final supabase = Supabase.instance.client;
+final _supabase = SupabaseManager().supabaseClient;
 
 class ActivePlayersPage extends ConsumerStatefulWidget {
   const ActivePlayersPage({super.key});
@@ -20,10 +21,10 @@ class ActivePlayersPage extends ConsumerStatefulWidget {
 }
 
 class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
-  late List<PlayerModel> jugadoresGlobal;
-  late List<PlayerModel> jugadoresInactivos;
+  late List<PlayerModel> _jugadoresGlobal;
+  late List<PlayerModel> _jugadoresInactivos;
 
-  final stream = supabase
+  final stream = _supabase
       .from('active_players')
       .stream(primaryKey: ['id_active_users'])
       .gte(
@@ -35,14 +36,14 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
   @override
   void initState() {
     super.initState();
-    jugadoresGlobal = [];
-    jugadoresInactivos = [];
+    _jugadoresGlobal = [];
+    _jugadoresInactivos = [];
   }
 
   @override
   void dispose() {
     //Dispose any timer to avoid memory leak
-    for (var jugador in jugadoresGlobal) {
+    for (var jugador in _jugadoresGlobal) {
       jugador.disposeTimer();
     }
     super.dispose();
@@ -78,14 +79,14 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
           } else {
             List<Map<String, dynamic>> jugadoresMap = snapshot.data!;
             //Borrar listados de jugadores
-            jugadoresGlobal.clear();
-            jugadoresInactivos.clear();
+            _jugadoresGlobal.clear();
+            _jugadoresInactivos.clear();
             for (var jugador in jugadoresMap) {
               //Poblar el listado
               if (jugador['is_active'] == true) {
-                jugadoresGlobal.add(PlayerModel.fromJson(jugador));
+                _jugadoresGlobal.add(PlayerModel.fromJson(jugador));
               } else {
-                jugadoresInactivos.add(PlayerModel.fromJson(jugador));
+                _jugadoresInactivos.add(PlayerModel.fromJson(jugador));
               }
             }
 
@@ -107,7 +108,7 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
               }
             }
 
-            for (var jugador in jugadoresGlobal) {
+            for (var jugador in _jugadoresGlobal) {
               setupTimer(jugador);
             }
 
@@ -125,105 +126,147 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                         style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold),
                       ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: jugadoresGlobal.length,
-                          itemBuilder: (BuildContext ctx, int i) {
-                            PlayerModel jugador = jugadoresGlobal[i];
-
-                            String formattedStartTime =
-                                FormattedTime.getFormattedTime(jugador.start);
-
-                            String formattedEndTime =
-                                FormattedTime.getFormattedTime(jugador.end);
-
-                            //Condición para solamente elegir a los activos
-                            return Slidable(
-                              endActionPane: ActionPane(
-                                motion: const DrawerMotion(),
+                      _jugadoresGlobal.isEmpty
+                          ? Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  SlidableAction(
-                                    borderRadius: BorderRadius.circular(5),
-                                    onPressed: (context) {
-                                      _erasePlayer(context, jugador);
-                                    },
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.delete,
-                                  ),
-                                  SlidableAction(
-                                    borderRadius: BorderRadius.circular(5),
-                                    onPressed: (context) {
-                                      _updatePlayer(context, jugador);
-                                    },
-                                    backgroundColor: Colors.deepPurple,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.edit,
+                                  Container(
+                                    alignment: Alignment.center,
+                                    height: 80,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white24),
+                                    ),
+                                    child: const Text(
+                                      'No hay jugadores activos actualmente',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(5.0),
-                                child: Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Colors.white24,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: ListTile(
-                                    dense: true,
-                                    leading: Icon(
-                                      Icons.person,
-                                      color: jugador.isActive
-                                          ? Colors.green
-                                          : Colors.red,
+                            )
+                          : Expanded(
+                              child: ListView.builder(
+                                itemCount: _jugadoresGlobal.length,
+                                itemBuilder: (BuildContext ctx, int i) {
+                                  PlayerModel jugador = _jugadoresGlobal[i];
+
+                                  String formattedStartTime =
+                                      TimeFunctions.getFormattedTime(
+                                          jugador.start);
+
+                                  String formattedEndTime =
+                                      TimeFunctions.getFormattedTime(
+                                          jugador.end);
+
+                                  //Condición para solamente elegir a los activos
+                                  return Slidable(
+                                    endActionPane: ActionPane(
+                                      motion: const DrawerMotion(),
+                                      children: [
+                                        SlidableAction(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onPressed: (context) {
+                                            _erasePlayer(context, jugador);
+                                          },
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.delete,
+                                          label: 'Borrar',
+                                        ),
+                                        SlidableAction(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onPressed: (context) {
+                                            _updatePlayer(context, jugador);
+                                          },
+                                          backgroundColor: Colors.deepPurple,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.edit,
+                                          label: 'Editar',
+                                        ),
+                                        SlidableAction(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onPressed: (context) async {
+                                            await updatePlayerStatus(jugador);
+                                          },
+                                          backgroundColor: Colors.blueGrey,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.remove_circle_outlined,
+                                          label: 'Inactivar',
+                                        ),
+                                      ],
                                     ),
-                                    title: Text(
-                                      jugador.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    subtitle: RichText(
-                                      text: TextSpan(
-                                          text: 'Inicio:',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.white24,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                        child: ListTile(
+                                          dense: true,
+                                          leading: Icon(
+                                            Icons.person,
+                                            color: jugador.isActive
+                                                ? Colors.green
+                                                : Colors.red,
                                           ),
-                                          children: [
-                                            TextSpan(
-                                              text: ' $formattedStartTime',
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold),
+                                          title: Text(
+                                            jugador.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
                                             ),
-                                            const TextSpan(
-                                              text: '\nFin:',
-                                            ),
-                                            TextSpan(
-                                              text: ' $formattedEndTime',
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ]),
+                                          ),
+                                          subtitle: RichText(
+                                            text: TextSpan(
+                                                text: 'Inicio:',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                                children: [
+                                                  TextSpan(
+                                                    text:
+                                                        ' $formattedStartTime',
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  const TextSpan(
+                                                    text: '\nFin:',
+                                                  ),
+                                                  TextSpan(
+                                                    text: ' $formattedEndTime',
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ]),
+                                          ),
+                                          trailing: Icon(
+                                            Icons.check_circle,
+                                            color: jugador.isActive
+                                                ? Colors.green
+                                                : Colors.red,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    trailing: Icon(
-                                      Icons.check_circle,
-                                      color: jugador.isActive
-                                          ? Colors.green
-                                          : Colors.red,
-                                    ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            ),
                     ],
                   ),
                 ),
@@ -239,16 +282,17 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                       ),
                       Expanded(
                         child: ListView.builder(
-                          itemCount: jugadoresInactivos.length,
+                          itemCount: _jugadoresInactivos.length,
                           itemBuilder: (BuildContext ctx, int i) {
-                            PlayerModel jugadorInactivo = jugadoresInactivos[i];
+                            PlayerModel jugadorInactivo =
+                                _jugadoresInactivos[i];
 
                             String formattedStartTime =
-                                FormattedTime.getFormattedTime(
+                                TimeFunctions.getFormattedTime(
                                     jugadorInactivo.start);
 
                             String formattedEndTime =
-                                FormattedTime.getFormattedTime(
+                                TimeFunctions.getFormattedTime(
                                     jugadorInactivo.end);
 
                             //Condición para solamente elegir a los activos
@@ -360,12 +404,12 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
 
   Future<void> updatePlayerStatus(PlayerModel player) async {
     try {
-      await supabase.from('active_players').update({
+      await _supabase.from('active_players').update({
         'is_active': false,
       }).eq('id_active_users', player.idActiveUsers!);
       setState(() {
-        jugadoresInactivos.insert(0, player);
-        jugadoresGlobal.remove(player);
+        _jugadoresInactivos.insert(0, player);
+        _jugadoresGlobal.remove(player);
       });
       if (!mounted) return;
     } on PostgrestException catch (e) {

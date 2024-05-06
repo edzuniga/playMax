@@ -1,10 +1,12 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,8 +19,8 @@ class UpdatePlayerModal extends ConsumerStatefulWidget {
 }
 
 class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
-  bool isTryingToUpdatePlayer = false;
-  final supabase = Supabase.instance.client;
+  bool _isTryingToUpdatePlayer = false;
+  final _supabase = SupabaseManager().supabaseClient;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _startController;
@@ -31,9 +33,9 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   void initState() {
     super.initState();
     String tiempoInicial =
-        FormattedTime.getFormattedTime(widget.jugadorRecibido.start);
+        TimeFunctions.getFormattedTime(widget.jugadorRecibido.start);
     String tiempoFinal =
-        FormattedTime.getFormattedTime(widget.jugadorRecibido.end);
+        TimeFunctions.getFormattedTime(widget.jugadorRecibido.end);
     _nameController = TextEditingController(text: widget.jugadorRecibido.name);
     _startController = TextEditingController(text: tiempoInicial);
     _endController = TextEditingController(text: tiempoFinal);
@@ -95,7 +97,7 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                         if (newTime != null) {
                           _startTime = newTime;
                           String formattedTime =
-                              FormattedTime.getFormattedTime(newTime);
+                              TimeFunctions.getFormattedTime(newTime);
                           _startController.text = formattedTime;
                         }
                       },
@@ -147,7 +149,7 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                         if (newTime != null) {
                           _endTime = newTime;
                           String formattedTime =
-                              FormattedTime.getFormattedTime(newTime);
+                              TimeFunctions.getFormattedTime(newTime);
                           _endController.text = formattedTime;
                         }
                       },
@@ -190,12 +192,14 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                   ),
-                  onPressed: (isTryingToUpdatePlayer)
+                  onPressed: (_isTryingToUpdatePlayer)
                       ? null
                       : () async {
                           if (_formKey.currentState!.validate()) {
-                            if (FormattedTime.checkSelectedTimeOfDay(
-                                _startTime!, _endTime!)) {
+                            if (TimeFunctions.checkSelectedTimeOfDay(
+                                    _startTime!, _endTime!) &&
+                                TimeFunctions.isEndTimeAfterCurrent(
+                                    _endTime!)) {
                               final player = PlayerModel(
                                 idActiveUsers:
                                     widget.jugadorRecibido.idActiveUsers,
@@ -208,23 +212,21 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                               //*Try to update the player
                               await _tryToUpdatePlayer(player);
                             } else {
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(const SnackBar(
+                              Fluttertoast.showToast(
+                                toastLength: Toast.LENGTH_LONG,
                                 backgroundColor: Colors.red,
-                                content: Text(
-                                  'La hora de fin debe ser mayor a la de inicio',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ));
+                                textColor: Colors.white,
+                                gravity: ToastGravity.SNACKBAR,
+                                timeInSecForIosWeb: 3,
+                                webBgColor: 'red',
+                                webPosition: 'center',
+                                msg:
+                                    'La hora de fin debe ser mayor a la de inicio y a la hora actual!!',
+                              );
                             }
                           }
                         },
-                  child: (isTryingToUpdatePlayer)
+                  child: (_isTryingToUpdatePlayer)
                       ? SpinPerfect(
                           infinite: true,
                           child: const Icon(
@@ -246,18 +248,18 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   }
 
   Future<void> _tryToUpdatePlayer(PlayerModel player) async {
-    setState(() => isTryingToUpdatePlayer = true);
+    setState(() => _isTryingToUpdatePlayer = true);
     Map playerMap = player.toJson();
     try {
-      await supabase
+      await _supabase
           .from('active_players')
           .update(playerMap)
           .eq('id_active_users', player.idActiveUsers!);
-      setState(() => isTryingToUpdatePlayer = false);
+      setState(() => _isTryingToUpdatePlayer = false);
       if (!mounted) return;
       context.pop();
     } on PostgrestException catch (e) {
-      setState(() => isTryingToUpdatePlayer = false);
+      setState(() => _isTryingToUpdatePlayer = false);
       if (!mounted) return;
       context.pop();
       ScaffoldMessenger.of(context).clearSnackBars();

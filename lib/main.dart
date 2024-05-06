@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,11 @@ import 'package:playmax_app_1/presentation/providers/router_provider.dart';
 void main() async {
   //ensure flutter
   WidgetsFlutterBinding.ensureInitialized();
+  //Set preferred orientation
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   //Load env assets
   await dotenv.load();
   //Supabase conection

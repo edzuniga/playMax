@@ -1,12 +1,15 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NewPlayerModal extends ConsumerStatefulWidget {
   const NewPlayerModal({super.key});
@@ -17,7 +20,7 @@ class NewPlayerModal extends ConsumerStatefulWidget {
 
 class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
   bool isTryingToAddPlayer = false;
-  final supabase = Supabase.instance.client;
+  final _supabase = SupabaseManager().supabaseClient;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _startController = TextEditingController();
@@ -80,7 +83,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                         if (newTime != null) {
                           _startTime = newTime;
                           String formattedTime =
-                              FormattedTime.getFormattedTime(newTime);
+                              TimeFunctions.getFormattedTime(newTime);
                           _startController.text = formattedTime;
                         }
                       },
@@ -132,7 +135,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                         if (newTime != null) {
                           _endTime = newTime;
                           String formattedTime =
-                              FormattedTime.getFormattedTime(newTime);
+                              TimeFunctions.getFormattedTime(newTime);
                           _endController.text = formattedTime;
                         }
                       },
@@ -179,8 +182,10 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                       ? null
                       : () async {
                           if (_formKey.currentState!.validate()) {
-                            if (FormattedTime.checkSelectedTimeOfDay(
-                                _startTime!, _endTime!)) {
+                            if (TimeFunctions.checkSelectedTimeOfDay(
+                                    _startTime!, _endTime!) &&
+                                TimeFunctions.isEndTimeAfterCurrent(
+                                    _endTime!)) {
                               final player = PlayerModel(
                                 createdAt: DateTime.now().toString(),
                                 name: _nameController.text,
@@ -191,19 +196,17 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                               //*Try to insert in table
                               await _tryToInsertPlayer(player);
                             } else {
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(const SnackBar(
+                              Fluttertoast.showToast(
+                                toastLength: Toast.LENGTH_LONG,
                                 backgroundColor: Colors.red,
-                                content: Text(
-                                  'La hora de fin debe ser mayor a la de inicio',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ));
+                                textColor: Colors.white,
+                                gravity: ToastGravity.SNACKBAR,
+                                timeInSecForIosWeb: 3,
+                                webBgColor: 'red',
+                                webPosition: 'center',
+                                msg:
+                                    'La hora de fin debe ser mayor a la de inicio y a la hora actual!!',
+                              );
                             }
                           }
                         },
@@ -232,7 +235,7 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
     setState(() => isTryingToAddPlayer = true);
     Map playerMap = player.toJson();
     try {
-      await supabase.from('active_players').insert(playerMap);
+      await _supabase.from('active_players').insert(playerMap);
       setState(() => isTryingToAddPlayer = false);
       if (!mounted) return;
       context.pop();
