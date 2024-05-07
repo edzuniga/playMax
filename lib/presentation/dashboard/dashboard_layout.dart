@@ -64,9 +64,12 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
           )
         : Scaffold(
             appBar: AppBar(
-              title: const Text(
-                'Jugadores ACTIVOS / INACTIVOS',
-                style: TextStyle(color: Colors.white),
+              centerTitle: true,
+              title: Text(
+                (pageIndex == 0 || pageIndex == 1)
+                    ? 'Jugadores ACTIVOS / INACTIVOS'
+                    : 'Su tiempo se acabó',
+                style: const TextStyle(color: Colors.white),
               ),
               actions: [
                 IconButton(
@@ -91,6 +94,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                           color: Colors.white,
                         ),
                 ),
+                const SizedBox(width: 10),
                 Padding(
                   padding: const EdgeInsets.only(
                     right: 10,

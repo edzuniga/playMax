@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -23,6 +24,7 @@ class ActivePlayersPage extends ConsumerStatefulWidget {
 class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
   late List<PlayerModel> _jugadoresGlobal;
   late List<PlayerModel> _jugadoresInactivos;
+  late AudioPlayer _player;
 
   final stream = _supabase
       .from('active_players')
@@ -38,6 +40,12 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
     super.initState();
     _jugadoresGlobal = [];
     _jugadoresInactivos = [];
+    _player = AudioPlayer(); // Create the audio player.
+    // Set the release mode to keep the source after playback has completed.
+    _player.setReleaseMode(ReleaseMode.stop);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _player.setSource(AssetSource('sounds/playmax_alarm_mixdown.mp3'));
+    });
   }
 
   @override
@@ -46,6 +54,7 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
     for (var jugador in _jugadoresGlobal) {
       jugador.disposeTimer();
     }
+    _player.dispose();
     super.dispose();
   }
 
@@ -419,6 +428,7 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
         _jugadoresInactivos.insert(0, player);
         _jugadoresGlobal.remove(player);
       });
+      await _play();
       if (!mounted) return;
     } on PostgrestException catch (e) {
       if (!mounted) return;
@@ -435,5 +445,10 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
         ),
       ));
     }
+  }
+
+  Future<void> _play() async {
+    await _player.stop();
+    await _player.resume();
   }
 }

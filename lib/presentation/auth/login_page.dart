@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/config/routes.dart';
 import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +20,7 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
+  final Uri _url = Uri.parse('https://uphn.net');
   //Instancia de supabase
   final supabase = Supabase.instance.client;
   //Controlador para el switch
@@ -91,6 +94,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               color: Colors.black87,
                               fontSize: 25,
                               fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Center(
+                        child: Text(
+                          'Sistema de control de jugadores',
+                          style: GoogleFonts.roboto(
+                            color: Colors.black38,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                       const Gap(45),
@@ -177,7 +189,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       SizedBox(
                         width: screenSize.width,
                         child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
+                          alignment: WrapAlignment.start,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             SizedBox(
@@ -203,16 +215,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     style: TextStyle(color: Colors.black),
                                   ),
                                 ],
-                              ),
-                            ),
-                            TextButton(
-                              style: TextButton.styleFrom(),
-                              onPressed: () {
-                                context.goNamed(Routes.recovery);
-                              },
-                              child: const Text(
-                                '¿Olvidaste tu contraseña?',
-                                style: TextStyle(color: AppColors.kStrongPink),
                               ),
                             ),
                           ],
@@ -253,14 +255,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const Divider(
                         color: Colors.black12,
                       ),
-                      const Center(
-                          child: Text(
-                        'Derechos Reservados | UP Studios',
-                        style: TextStyle(
-                          color: Colors.black38,
-                          fontSize: 12,
-                        ),
-                      ))
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            '2024 Derechos Reservados | ',
+                            style: TextStyle(
+                              color: Colors.black38,
+                              fontSize: 12,
+                            ),
+                          ),
+                          TextButton(
+                              onPressed: _launchUrl,
+                              child: const Text('UP Studios'))
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -318,6 +327,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _launchUrl() async {
+    if (!await launchUrl(_url)) {
+      throw Exception('No se pudo navegar a: $_url');
     }
   }
 }

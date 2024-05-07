@@ -42,19 +42,6 @@ GoRouter appRouter(Ref ref) {
               ),
             ),
           ),
-          GoRoute(
-            name: Routes.recovery,
-            path: '/recovery',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              child: const RecoveryPage(),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) =>
-                      FadeTransition(
-                opacity: animation,
-                child: child,
-              ),
-            ),
-          ),
         ],
       ),
       ShellRoute(
