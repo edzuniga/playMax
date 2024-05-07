@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'active_page_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class ActivePage extends _$ActivePage {
   @override
   int build() {

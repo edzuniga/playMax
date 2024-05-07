@@ -1,3 +1,4 @@
+import 'package:playmax_app_1/presentation/providers/active_page_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -68,6 +69,8 @@ class AuthState extends _$AuthState {
     try {
       await supabase.auth.signOut(); //logout
       await prefs.clear(); //clear stored data
+      state = false;
+      ref.read(activePageProvider.notifier).setPageIndex(0);
       return 'loggedOut';
     } on AuthException catch (e) {
       return e.message;

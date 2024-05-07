@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/config/routes.dart';
 
 class ErrorPage extends StatelessWidget {
-  const ErrorPage({super.key});
+  const ErrorPage({super.key, required this.state});
+  final GoRouterState state;
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +13,7 @@ class ErrorPage extends StatelessWidget {
           onPressed: () {
             context.goNamed(Routes.login);
           },
-          child: const Text('Regresar')),
+          child: Text(state.error!.message.toString())),
     );
   }
 }

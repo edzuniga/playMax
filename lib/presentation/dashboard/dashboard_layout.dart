@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/presentation/providers/auth_state_provider.dart';
@@ -20,7 +21,7 @@ typedef NavigationFunction = void Function(BuildContext context);
 
 class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   bool _isTryingLogout = false;
-  bool _isAdmin = false;
+  bool _isFullScreen = false;
 
   @override
   void initState() {
@@ -31,34 +32,27 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   void _getRol() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? rol = prefs.getInt('rol');
-    if (rol != null && rol == 1) {
-      setState(() {
-        _isAdmin = true;
-      });
+    if (rol != null) {
+      switch (rol) {
+        //Para admins y operadores
+        case 1 || 2:
+          ref.read(activePageProvider.notifier).setPageIndex(0);
+          if (!mounted) return;
+          _navigateTo(context, Routes.activePlayer);
+          break;
+
+        //Para display
+        case 3:
+          ref.read(activePageProvider.notifier).setPageIndex(2);
+          if (!mounted) return;
+          _navigateTo(context, Routes.display);
+          break;
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<BottomNavigationBarItem> bottomItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.supervised_user_circle_outlined),
-        label: 'Jugadores',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.monitor),
-        label: 'Visualización',
-      ),
-    ];
-
-    // Conditionally add an item if _isAdmin is true
-    if (_isAdmin) {
-      bottomItems.add(const BottomNavigationBarItem(
-        icon: Icon(Icons.group),
-        label: 'Usuarios',
-      ));
-    }
-
     //Provider de la página activa
     int pageIndex = ref.watch(activePageProvider);
 
@@ -75,6 +69,28 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                 style: TextStyle(color: Colors.white),
               ),
               actions: [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isFullScreen = !_isFullScreen;
+                    });
+
+                    _isFullScreen
+                        ? SystemChrome.setEnabledSystemUIMode(
+                            SystemUiMode.immersiveSticky)
+                        : SystemChrome.setEnabledSystemUIMode(
+                            SystemUiMode.edgeToEdge);
+                  },
+                  icon: _isFullScreen
+                      ? const Icon(
+                          Icons.fullscreen_exit,
+                          color: Colors.white,
+                        )
+                      : const Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                        ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(
                     right: 10,
@@ -91,33 +107,34 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                       ScaffoldMessengerState scaffoldMessenger =
                           ScaffoldMessenger.of(context);
 
-                      String trySignOutMessage = await ref
+                      await ref
                           .read(authStateProvider.notifier)
-                          .tryLogout();
-
-                      if (trySignOutMessage == 'loggedOut') {
-                        setState(() {
-                          _isTryingLogout = false;
-                        });
-                        navigateTo(Routes.login);
-                      } else {
-                        setState(() {
-                          _isTryingLogout = false;
-                        });
-                        scaffoldMessenger.clearSnackBars();
-                        scaffoldMessenger.showSnackBar(
-                          SnackBar(
-                            backgroundColor: Colors.red,
-                            content: Text(
-                              'Ocurrió un error!! Pruebe más tarde -> $trySignOutMessage',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                          .tryLogout()
+                          .then((trySignOutMessage) {
+                        if (trySignOutMessage == 'loggedOut') {
+                          setState(() {
+                            _isTryingLogout = false;
+                          });
+                          _navigateTo(context, Routes.login);
+                        } else {
+                          setState(() {
+                            _isTryingLogout = false;
+                          });
+                          scaffoldMessenger.clearSnackBars();
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              content: Text(
+                                'Ocurrió un error!! Pruebe más tarde -> $trySignOutMessage',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }
+                          );
+                        }
+                      });
                     },
                     icon: const Icon(
                       Icons.logout_outlined,
@@ -148,31 +165,10 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                     child: const Icon(Icons.person_add_alt_1),
                   )
                 : null,
-            bottomNavigationBar: BottomNavigationBar(
-              unselectedItemColor: Colors.grey,
-              backgroundColor: Colors.deepPurple,
-              selectedItemColor: Colors.white,
-              currentIndex: pageIndex,
-              onTap: (i) {
-                ref.read(activePageProvider.notifier).setPageIndex(i);
-                if (i == 0) {
-                  _navigateTo(context, Routes.activePlayer);
-                } else if (i == 1) {
-                  _navigateTo(context, Routes.display);
-                } else if (i == 2) {
-                  _navigateTo(context, Routes.users);
-                }
-              },
-              items: bottomItems,
-            ),
           );
   }
 
   void _navigateTo(BuildContext context, String pageName) {
     context.goNamed(pageName);
-  }
-
-  void navigateTo(String name) {
-    context.goNamed(name);
   }
 }

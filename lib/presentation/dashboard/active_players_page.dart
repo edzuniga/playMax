@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/update_player_modal.dart';
@@ -31,7 +31,7 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
         'created_at',
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
       )
-      .order('fin', ascending: true);
+      .order('fin', ascending: false);
 
   @override
   void initState() {
@@ -163,6 +163,22 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
 
                                   //Condición para solamente elegir a los activos
                                   return Slidable(
+                                    startActionPane: ActionPane(
+                                      motion: const DrawerMotion(),
+                                      children: [
+                                        SlidableAction(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          onPressed: (context) async {
+                                            await updatePlayerStatus(jugador);
+                                          },
+                                          backgroundColor: Colors.blueGrey,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.remove_circle_outlined,
+                                          label: 'Inactivar',
+                                        ),
+                                      ],
+                                    ),
                                     endActionPane: ActionPane(
                                       motion: const DrawerMotion(),
                                       children: [
@@ -187,17 +203,6 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                                           foregroundColor: Colors.white,
                                           icon: Icons.edit,
                                           label: 'Editar',
-                                        ),
-                                        SlidableAction(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                          onPressed: (context) async {
-                                            await updatePlayerStatus(jugador);
-                                          },
-                                          backgroundColor: Colors.blueGrey,
-                                          foregroundColor: Colors.white,
-                                          icon: Icons.remove_circle_outlined,
-                                          label: 'Inactivar',
                                         ),
                                       ],
                                     ),
@@ -282,6 +287,9 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                       ),
                       Expanded(
                         child: ListView.builder(
+                          padding: const EdgeInsets.only(
+                            bottom: 100,
+                          ),
                           itemCount: _jugadoresInactivos.length,
                           itemBuilder: (BuildContext ctx, int i) {
                             PlayerModel jugadorInactivo =
