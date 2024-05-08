@@ -1,23 +1,25 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/data/player_model.dart';
+import 'package:playmax_app_1/presentation/providers/timers_management_provider.dart';
 import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final _supabase = SupabaseManager().supabaseClient;
 
-class ErasePlayerModal extends StatefulWidget {
+class ErasePlayerModal extends ConsumerStatefulWidget {
   const ErasePlayerModal({required this.playerInfo, super.key});
   final PlayerModel playerInfo;
 
   @override
-  State<ErasePlayerModal> createState() => _ErasePlayerModalState();
+  ConsumerState<ErasePlayerModal> createState() => _ErasePlayerModalState();
 }
 
-class _ErasePlayerModalState extends State<ErasePlayerModal> {
+class _ErasePlayerModalState extends ConsumerState<ErasePlayerModal> {
   bool isTryingToErasePlayer = false;
   @override
   Widget build(BuildContext context) {
@@ -83,6 +85,10 @@ class _ErasePlayerModalState extends State<ErasePlayerModal> {
 
   Future<void> _tryDeletePlayer() async {
     setState(() => isTryingToErasePlayer = true);
+    //Borrar el timer actual del player que se está borrando
+    ref
+        .read(timerManagementProvider.notifier)
+        .cancelTimer(widget.playerInfo.idActiveUsers!);
     try {
       await _supabase
           .from('active_players')

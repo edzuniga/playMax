@@ -45,4 +45,20 @@ class PlayerModel extends Player {
       "is_active": isActive,
     };
   }
+
+  PlayerModel copyWith({
+    int? idActiveUsers,
+    String? name,
+    TimeOfDay? start,
+    TimeOfDay? end,
+    bool? isActive,
+  }) {
+    return PlayerModel(
+      idActiveUsers: idActiveUsers ?? this.idActiveUsers,
+      name: name ?? this.name,
+      start: start ?? this.start,
+      end: end ?? this.end,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }

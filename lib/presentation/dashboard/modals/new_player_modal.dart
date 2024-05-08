@@ -4,9 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
@@ -20,7 +19,6 @@ class NewPlayerModal extends ConsumerStatefulWidget {
 
 class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
   bool isTryingToAddPlayer = false;
-  final _supabase = SupabaseManager().supabaseClient;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _startController = TextEditingController();
@@ -233,28 +231,26 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
 
   Future<void> _tryToInsertPlayer(PlayerModel player) async {
     setState(() => isTryingToAddPlayer = true);
-    Map playerMap = player.toJson();
-    try {
-      await _supabase.from('active_players').insert(playerMap);
-      setState(() => isTryingToAddPlayer = false);
-      if (!mounted) return;
-      context.pop();
-    } on PostgrestException catch (e) {
-      setState(() => isTryingToAddPlayer = false);
-      if (!mounted) return;
-      context.pop();
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(
-          'Ocurrió un error al intentar agregar al jugador -> ${e.message}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    await SupabaseManager().wasPlayerCreated(player, ref).then((message) {
+      if (message == 'success') {
+        setState(() => isTryingToAddPlayer = false);
+        context.pop();
+      } else {
+        setState(() => isTryingToAddPlayer = false);
+        context.pop();
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Ocurrió un error al intentar agregar al jugador -> $message',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ));
-    }
+        ));
+      }
+    });
   }
 }

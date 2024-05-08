@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 abstract class Player {
@@ -10,7 +8,6 @@ abstract class Player {
     required this.start,
     required this.end,
     this.isActive = true,
-    this.timer,
   });
   final int? idActiveUsers;
   final String? createdAt;
@@ -18,9 +15,4 @@ abstract class Player {
   final TimeOfDay start;
   final TimeOfDay end;
   final bool isActive;
-  Timer? timer;
-
-  void disposeTimer() {
-    timer?.cancel();
-  }
 }

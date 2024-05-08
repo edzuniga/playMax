@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
+import 'package:playmax_app_1/presentation/providers/timers_management_provider.dart';
 import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -248,6 +249,27 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   }
 
   Future<void> _tryToUpdatePlayer(PlayerModel player) async {
+    final timerProvider = ref.read(timerManagementProvider.notifier);
+
+    void setupTimer(PlayerModel player) {
+      //?need to convert each TimeOfDay to DateTime to compare them
+      DateTime now = DateTime.now();
+      DateTime endDateTime = DateTime(
+          now.year, now.month, now.day, player.end.hour, player.end.minute);
+
+      //?calculate difference (cuánto le queda con respecto
+      //? a la hora ACTUAL)
+      int secondsToEnd = endDateTime.difference(now).inSeconds;
+
+      //Set the timer in the provider conditioned to secondsToEnd
+      if (secondsToEnd > 0) {
+        timerProvider.setTimer(
+            player.idActiveUsers!, Duration(seconds: secondsToEnd), () {
+          //TODO construir esta lógica
+        });
+      }
+    }
+
     setState(() => _isTryingToUpdatePlayer = true);
     Map playerMap = player.toJson();
     try {
@@ -256,6 +278,10 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
           .update(playerMap)
           .eq('id_active_users', player.idActiveUsers!);
       setState(() => _isTryingToUpdatePlayer = false);
+      //Cancelar el timer anterior
+      timerProvider.cancelTimer(widget.jugadorRecibido.idActiveUsers!);
+      //Agregar un nuevo timer con la nueva tiempo
+      setupTimer(player);
       if (!mounted) return;
       context.pop();
     } on PostgrestException catch (e) {
