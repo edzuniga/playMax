@@ -17,7 +17,7 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
   //Load env assets
-  await dotenv.load();
+  await dotenv.load(fileName: 'assets/dotEnv.env');
   //Supabase conection
   await Supabase.initialize(
     url: dotenv.get('URL'),
@@ -38,7 +38,7 @@ class MyApp extends ConsumerWidget {
     //Provider que maneja el router
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
-      title: 'PlayMax Active Players',
+      title: 'PlayMax Players | TGU',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildAppTheme(),
       routerConfig: router,

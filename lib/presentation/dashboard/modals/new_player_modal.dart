@@ -5,9 +5,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
+import 'package:playmax_app_1/presentation/providers/supabase_instance.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
 
 class NewPlayerModal extends ConsumerStatefulWidget {
@@ -23,6 +23,9 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
+  final TextEditingController _cantidadController =
+      TextEditingController(text: "1");
+  final TextEditingController _colorPulseraController = TextEditingController();
 
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
@@ -32,6 +35,8 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
     _nameController.clear();
     _startController.clear();
     _endController.clear();
+    _cantidadController.clear();
+    _colorPulseraController.clear();
     super.dispose();
   }
 
@@ -164,6 +169,19 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
               ],
             ),
             const Gap(30),
+            TextInputWidget(
+              controlador: _colorPulseraController,
+              label: 'Color de pulsera',
+              hintText: 'Verde... Morado...., Rojo..., etc...',
+            ),
+            const Gap(30),
+            TextInputWidget(
+              controlador: _cantidadController,
+              label: 'Cantidad de personas entrando',
+              hintText: '2',
+              isJustNumbers: true,
+            ),
+            const Gap(30),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -190,6 +208,11 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
                                 start: _startTime!,
                                 end: _endTime!,
                                 isActive: true,
+                                cantidad: int.parse(_cantidadController.text),
+                                colorPulsera:
+                                    (_colorPulseraController.text.isNotEmpty)
+                                        ? _colorPulseraController.text
+                                        : '',
                               );
                               //*Try to insert in table
                               await _tryToInsertPlayer(player);
@@ -230,8 +253,9 @@ class _NewPlayerModalState extends ConsumerState<NewPlayerModal> {
   }
 
   Future<void> _tryToInsertPlayer(PlayerModel player) async {
+    final supabaseClient = ref.read(supabaseManagementProvider.notifier);
     setState(() => isTryingToAddPlayer = true);
-    await SupabaseManager().wasPlayerCreated(player, ref).then((message) {
+    await supabaseClient.wasPlayerCreated(player).then((message) {
       if (message == 'success') {
         setState(() => isTryingToAddPlayer = false);
         context.pop();

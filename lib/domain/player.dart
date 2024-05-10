@@ -8,6 +8,8 @@ abstract class Player {
     required this.start,
     required this.end,
     this.isActive = true,
+    required this.cantidad,
+    this.colorPulsera,
   });
   final int? idActiveUsers;
   final String? createdAt;
@@ -15,4 +17,6 @@ abstract class Player {
   final TimeOfDay start;
   final TimeOfDay end;
   final bool isActive;
+  final int cantidad;
+  final String? colorPulsera;
 }

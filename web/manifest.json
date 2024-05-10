@@ -1,11 +1,11 @@
 {
-    "name": "playmax_app_1",
-    "short_name": "playmax_app_1",
+    "name": "web",
+    "short_name": "web",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "App para administrar los jugadores activos de PlayMax.",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

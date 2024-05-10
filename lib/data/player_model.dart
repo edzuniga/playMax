@@ -9,6 +9,8 @@ class PlayerModel extends Player {
     required super.start,
     required super.end,
     super.isActive,
+    required super.cantidad,
+    super.colorPulsera,
   });
 
   factory PlayerModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,8 @@ class PlayerModel extends Player {
       start: parseTime(json["inicio"]),
       end: parseTime(json["fin"]),
       isActive: json["is_active"],
+      cantidad: json["cantidad"],
+      colorPulsera: json["color_pulsera"],
     );
   }
 
@@ -43,6 +47,8 @@ class PlayerModel extends Player {
       "inicio": timeToString(start),
       "fin": timeToString(end),
       "is_active": isActive,
+      "cantidad": cantidad,
+      "color_pulsera": colorPulsera,
     };
   }
 
@@ -52,6 +58,8 @@ class PlayerModel extends Player {
     TimeOfDay? start,
     TimeOfDay? end,
     bool? isActive,
+    int? cantidad,
+    String? colorPulsera,
   }) {
     return PlayerModel(
       idActiveUsers: idActiveUsers ?? this.idActiveUsers,
@@ -59,6 +67,8 @@ class PlayerModel extends Player {
       start: start ?? this.start,
       end: end ?? this.end,
       isActive: isActive ?? this.isActive,
+      cantidad: cantidad ?? this.cantidad,
+      colorPulsera: colorPulsera ?? this.colorPulsera,
     );
   }
 }

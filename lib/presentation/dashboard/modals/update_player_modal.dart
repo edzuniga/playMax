@@ -4,12 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
-import 'package:playmax_app_1/presentation/providers/timers_management_provider.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
+import 'package:playmax_app_1/presentation/providers/supabase_instance.dart';
 import 'package:playmax_app_1/presentation/widgets/text_input_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UpdatePlayerModal extends ConsumerStatefulWidget {
   const UpdatePlayerModal({required this.jugadorRecibido, super.key});
@@ -21,11 +20,12 @@ class UpdatePlayerModal extends ConsumerStatefulWidget {
 
 class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   bool _isTryingToUpdatePlayer = false;
-  final _supabase = SupabaseManager().supabaseClient;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _startController;
   late final TextEditingController _endController;
+  late final TextEditingController _cantidadController;
+  late final TextEditingController _colorPulseraController;
 
   late TimeOfDay? _startTime;
   late TimeOfDay? _endTime;
@@ -40,6 +40,10 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
     _nameController = TextEditingController(text: widget.jugadorRecibido.name);
     _startController = TextEditingController(text: tiempoInicial);
     _endController = TextEditingController(text: tiempoFinal);
+    _cantidadController =
+        TextEditingController(text: widget.jugadorRecibido.cantidad.toString());
+    _colorPulseraController =
+        TextEditingController(text: widget.jugadorRecibido.colorPulsera);
     _startTime = widget.jugadorRecibido.start;
     _endTime = widget.jugadorRecibido.end;
   }
@@ -49,6 +53,8 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
     _nameController.clear();
     _startController.clear();
     _endController.clear();
+    _cantidadController.clear();
+    _colorPulseraController.clear();
     super.dispose();
   }
 
@@ -181,6 +187,19 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
               ],
             ),
             const Gap(30),
+            TextInputWidget(
+              controlador: _colorPulseraController,
+              label: 'Color de pulsera',
+              hintText: 'Verde... Morado...., Rojo..., etc...',
+            ),
+            const Gap(30),
+            TextInputWidget(
+              controlador: _cantidadController,
+              label: 'Cantidad de personas entrando',
+              hintText: '2',
+              isJustNumbers: true,
+            ),
+            const Gap(30),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -209,6 +228,11 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
                                 start: _startTime!,
                                 end: _endTime!,
                                 isActive: true,
+                                cantidad: int.parse(_cantidadController.text),
+                                colorPulsera:
+                                    (_colorPulseraController.text.isNotEmpty)
+                                        ? _colorPulseraController.text
+                                        : '',
                               );
                               //*Try to update the player
                               await _tryToUpdatePlayer(player);
@@ -249,57 +273,28 @@ class _UpdatePlayerModalState extends ConsumerState<UpdatePlayerModal> {
   }
 
   Future<void> _tryToUpdatePlayer(PlayerModel player) async {
-    final timerProvider = ref.read(timerManagementProvider.notifier);
-
-    void setupTimer(PlayerModel player) {
-      //?need to convert each TimeOfDay to DateTime to compare them
-      DateTime now = DateTime.now();
-      DateTime endDateTime = DateTime(
-          now.year, now.month, now.day, player.end.hour, player.end.minute);
-
-      //?calculate difference (cuánto le queda con respecto
-      //? a la hora ACTUAL)
-      int secondsToEnd = endDateTime.difference(now).inSeconds;
-
-      //Set the timer in the provider conditioned to secondsToEnd
-      if (secondsToEnd > 0) {
-        timerProvider.setTimer(
-            player.idActiveUsers!, Duration(seconds: secondsToEnd), () {
-          //TODO construir esta lógica
-        });
-      }
-    }
-
+    final supabaseClient = ref.read(supabaseManagementProvider.notifier);
     setState(() => _isTryingToUpdatePlayer = true);
-    Map playerMap = player.toJson();
-    try {
-      await _supabase
-          .from('active_players')
-          .update(playerMap)
-          .eq('id_active_users', player.idActiveUsers!);
-      setState(() => _isTryingToUpdatePlayer = false);
-      //Cancelar el timer anterior
-      timerProvider.cancelTimer(widget.jugadorRecibido.idActiveUsers!);
-      //Agregar un nuevo timer con la nueva tiempo
-      setupTimer(player);
-      if (!mounted) return;
-      context.pop();
-    } on PostgrestException catch (e) {
-      setState(() => _isTryingToUpdatePlayer = false);
-      if (!mounted) return;
-      context.pop();
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(
-          'Ocurrió un error al intentar editar al jugador -> ${e.message}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    await supabaseClient.wasPlayerUpdated(player).then((message) {
+      if (message == 'success') {
+        setState(() => _isTryingToUpdatePlayer = true);
+        context.pop();
+      } else {
+        setState(() => _isTryingToUpdatePlayer = false);
+        context.pop();
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Ocurrió un error al intentar editar al jugador -> $message',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
-        ),
-      ));
-    }
+        ));
+      }
+    });
   }
 }

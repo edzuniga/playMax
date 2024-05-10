@@ -1,46 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:playmax_app_1/data/player_model.dart';
-import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
-final _supabase = SupabaseManager().supabaseClient;
+import 'package:playmax_app_1/config/colors.dart';
+import 'package:playmax_app_1/data/player_model.dart';
+import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
+import 'package:playmax_app_1/presentation/providers/supabase_instance.dart';
 
-class DisplayPage extends StatefulWidget {
+class DisplayPage extends ConsumerStatefulWidget {
   const DisplayPage({super.key});
 
   @override
-  State<DisplayPage> createState() => _DisplayPageState();
+  ConsumerState<DisplayPage> createState() => _DisplayPageState();
 }
 
-class _DisplayPageState extends State<DisplayPage> {
+class _DisplayPageState extends ConsumerState<DisplayPage> {
+  late SupabaseClient _supabase;
   late List<PlayerModel> _jugadoresInactivos;
-  final stream = _supabase
-      .from('active_players')
-      .stream(primaryKey: ['id_active_users'])
-      .gte(
-        'created_at',
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      )
-      .order('fin');
+  late SupabaseStreamBuilder _stream;
   //Crear controlador para el youtube player
   late YoutubePlayerController _youtubeController;
-  String youtubeVideoId = 'gyvJL8-9Sxc';
+  List<String> youtubePlaylist = [
+    'gyvJL8-9Sxc',
+    'Ac4XmNtXD3k',
+    'rkoUUdIBL-w',
+  ];
 
   @override
   void initState() {
     super.initState();
+    _supabase = ref.read(supabaseManagementProvider);
+    _stream = _supabase
+        .from('active_players')
+        .stream(primaryKey: ['id_active_users'])
+        .gte(
+          'created_at',
+          DateTime(
+              DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        )
+        .order('fin');
     _jugadoresInactivos = [];
     //Initialize the youtube controller
-    _youtubeController = YoutubePlayerController.fromVideoId(
-      videoId: youtubeVideoId,
-      autoPlay: true,
+    _youtubeController = YoutubePlayerController(
       params: const YoutubePlayerParams(
+        loop: true,
         showFullscreenButton: true,
         mute: true,
+        showVideoAnnotations: false,
+        enableCaption: false,
       ),
+    );
+
+    _youtubeController.loadPlaylist(
+      list: youtubePlaylist,
+      listType: ListType.playlist,
     );
   }
 
@@ -82,7 +98,7 @@ class _DisplayPageState extends State<DisplayPage> {
               child: SizedBox(
                 height: double.infinity,
                 child: StreamBuilder(
-                  stream: stream,
+                  stream: _stream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
@@ -124,7 +140,7 @@ class _DisplayPageState extends State<DisplayPage> {
                               TimeFunctions.getFormattedTime(
                                   jugadorInactivo.end);
                           return Container(
-                            height: 100,
+                            height: 120,
                             decoration: BoxDecoration(
                                 border: Border.all(),
                                 color: Colors.grey.shade200),
@@ -137,16 +153,33 @@ class _DisplayPageState extends State<DisplayPage> {
                                       vertical: 10,
                                     ),
                                     width: 200,
-                                    child: Text(
-                                      jugadorInactivo.name.toUpperCase(),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.roboto(
-                                        fontSize: 35,
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                        height: 0.9,
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          jugadorInactivo.name.toUpperCase(),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 35,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                            height: 0.9,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Pulsera: ${jugadorInactivo.colorPulsera}'
+                                              .toString(),
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: AppColors.kPurple,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),

@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:playmax_app_1/presentation/providers/supabase_instance.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:playmax_app_1/config/colors.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/providers/timers_management_provider.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-final _supabase = SupabaseManager().supabaseClient;
 
 class ErasePlayerModal extends ConsumerStatefulWidget {
   const ErasePlayerModal({required this.playerInfo, super.key});
@@ -20,7 +18,15 @@ class ErasePlayerModal extends ConsumerStatefulWidget {
 }
 
 class _ErasePlayerModalState extends ConsumerState<ErasePlayerModal> {
+  late SupabaseClient _supabase;
   bool isTryingToErasePlayer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _supabase = ref.read(supabaseManagementProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

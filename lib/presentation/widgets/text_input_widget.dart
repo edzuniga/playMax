@@ -1,5 +1,6 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TextInputWidget extends StatefulWidget {
@@ -11,6 +12,7 @@ class TextInputWidget extends StatefulWidget {
     this.hintText,
     this.isPassword = false,
     this.isEmail = false,
+    this.isJustNumbers = false,
   });
 
   final TextEditingController controlador;
@@ -19,6 +21,7 @@ class TextInputWidget extends StatefulWidget {
   final String? hintText;
   final bool isPassword;
   final bool isEmail;
+  final bool isJustNumbers;
 
   @override
   State<TextInputWidget> createState() => _TextInputWidgetState();
@@ -35,6 +38,10 @@ class _TextInputWidgetState extends State<TextInputWidget> {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      keyboardType: (widget.isJustNumbers) ? TextInputType.number : null,
+      inputFormatters: (widget.isJustNumbers)
+          ? <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly]
+          : null,
       controller: widget.controlador,
       initialValue: widget.valorInicial,
       style: GoogleFonts.roboto(),

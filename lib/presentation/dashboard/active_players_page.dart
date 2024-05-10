@@ -1,21 +1,18 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:playmax_app_1/presentation/providers/supabase_instance.dart';
 import 'package:playmax_app_1/presentation/providers/active_players_provider.dart';
 import 'package:playmax_app_1/presentation/providers/inactive_players_provider.dart';
 import 'package:playmax_app_1/presentation/providers/timers_management_provider.dart';
-import 'package:playmax_app_1/presentation/utils/supabase_instance.dart';
 import 'package:playmax_app_1/data/player_model.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/erase_player_modal.dart';
 import 'package:playmax_app_1/presentation/dashboard/modals/update_player_modal.dart';
 import 'package:playmax_app_1/presentation/functions/get_formatted_time_function.dart';
-
-final _supabase = SupabaseManager().supabaseClient;
 
 class ActivePlayersPage extends ConsumerStatefulWidget {
   const ActivePlayersPage({super.key});
@@ -25,33 +22,26 @@ class ActivePlayersPage extends ConsumerStatefulWidget {
 }
 
 class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
-  late AudioPlayer _player;
-
-  final stream = _supabase
-      .from('active_players')
-      .stream(primaryKey: ['id_active_users'])
-      .gte(
-        'created_at',
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      )
-      .order('fin', ascending: false);
+  late SupabaseClient _supabase;
+  late SupabaseStreamBuilder _stream;
 
   @override
   void initState() {
     super.initState();
-    _player = AudioPlayer(); // Create the audio player.
-    // Set the release mode to keep the source after playback has completed.
-    _player.setReleaseMode(ReleaseMode.stop);
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _player.setSource(AssetSource('sounds/playmax_alarm_mixdown.mp3'));
-    });
+    _supabase = ref.read(supabaseManagementProvider);
+    _stream = _supabase
+        .from('active_players')
+        .stream(primaryKey: ['id_active_users'])
+        .gte(
+          'created_at',
+          DateTime(
+              DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        )
+        .order('fin', ascending: false);
   }
 
   @override
   void dispose() {
-    //Dispose any timer to avoid memory leak
-    ref.read(timerManagementProvider.notifier).disposeTimers();
-    _player.dispose();
     super.dispose();
   }
 
@@ -71,7 +61,7 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
             vertical: 10,
           ),
           child: StreamBuilder(
-            stream: stream,
+            stream: _stream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -304,6 +294,33 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                                                                   FontWeight
                                                                       .bold),
                                                         ),
+                                                        const TextSpan(
+                                                          text: '\nCantidad:',
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              ' ${jugador.cantidad}',
+                                                          style: const TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        const TextSpan(
+                                                          text:
+                                                              '\nColor de pulsera:',
+                                                        ),
+                                                        TextSpan(
+                                                          text:
+                                                              ' ${jugador.colorPulsera}',
+                                                          style: const TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
                                                       ]),
                                                 ),
                                                 trailing: Icon(
@@ -400,6 +417,28 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
                                                     fontWeight:
                                                         FontWeight.bold),
                                               ),
+                                              const TextSpan(
+                                                text: '\nCantidad:',
+                                              ),
+                                              TextSpan(
+                                                text:
+                                                    ' ${jugadorInactivo.cantidad}',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              const TextSpan(
+                                                text: '\nColor de pulsera:',
+                                              ),
+                                              TextSpan(
+                                                text:
+                                                    ' ${jugadorInactivo.colorPulsera}',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
                                             ]),
                                       ),
                                       trailing: const Icon(
@@ -464,37 +503,13 @@ class _ActivePlayersPageState extends ConsumerState<ActivePlayersPage> {
   }
 
   Future<void> _updatePlayerStatus(PlayerModel player) async {
-    try {
-      await _supabase.from('active_players').update({
-        'is_active': false,
-      }).eq('id_active_users', player.idActiveUsers!);
-      setState(() {
-        ref
-            .read(inactivePlayersListProvider.notifier)
-            .addInactivePlayerInFirstPlace(player);
-        ref.read(activePlayersListProvider.notifier).removeActivePlayer(player);
-      });
-      await _play();
-      if (!mounted) return;
-    } on PostgrestException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(
-          'Ocurrió un error al intentar editar al jugador -> ${e.message}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ));
-    }
-  }
-
-  Future<void> _play() async {
-    await _player.stop();
-    await _player.resume();
+    //Borrar el timer del jugador
+    ref
+        .read(timerManagementProvider.notifier)
+        .cancelTimer(player.idActiveUsers!);
+    //Actualizar su status en la BD
+    await ref
+        .read(supabaseManagementProvider.notifier)
+        .updatePlayerStatus(player);
   }
 }
