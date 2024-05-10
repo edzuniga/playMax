@@ -73,7 +73,7 @@ class _DisplayPageState extends ConsumerState<DisplayPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const Gap(20),
+                  const Gap(10),
                   SizedBox(
                     width: 200,
                     child: Image.asset('assets/img/logo_playmax.png'),

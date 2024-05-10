@@ -20,6 +20,7 @@ class DashboardLayout extends ConsumerStatefulWidget {
 typedef NavigationFunction = void Function(BuildContext context);
 
 class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
+  bool _isDisplayPage = false;
   bool _isTryingLogout = false;
   bool _isFullScreen = false;
 
@@ -44,6 +45,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
         //Para display
         case 3:
           ref.read(activePageProvider.notifier).setPageIndex(2);
+          setState(() => _isDisplayPage = true);
           if (!mounted) return;
           _navigateTo(context, Routes.display);
           break;
@@ -72,28 +74,30 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                 style: const TextStyle(color: Colors.white),
               ),
               actions: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isFullScreen = !_isFullScreen;
-                    });
+                !_isDisplayPage
+                    ? IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isFullScreen = !_isFullScreen;
+                          });
 
-                    _isFullScreen
-                        ? SystemChrome.setEnabledSystemUIMode(
-                            SystemUiMode.immersiveSticky)
-                        : SystemChrome.setEnabledSystemUIMode(
-                            SystemUiMode.edgeToEdge);
-                  },
-                  icon: _isFullScreen
-                      ? const Icon(
-                          Icons.fullscreen_exit,
-                          color: Colors.white,
-                        )
-                      : const Icon(
-                          Icons.fullscreen,
-                          color: Colors.white,
-                        ),
-                ),
+                          _isFullScreen
+                              ? SystemChrome.setEnabledSystemUIMode(
+                                  SystemUiMode.immersiveSticky)
+                              : SystemChrome.setEnabledSystemUIMode(
+                                  SystemUiMode.edgeToEdge);
+                        },
+                        icon: _isFullScreen
+                            ? const Icon(
+                                Icons.fullscreen_exit,
+                                color: Colors.white,
+                              )
+                            : const Icon(
+                                Icons.fullscreen,
+                                color: Colors.white,
+                              ),
+                      )
+                    : const SizedBox(),
                 const SizedBox(width: 10),
                 Padding(
                   padding: const EdgeInsets.only(
