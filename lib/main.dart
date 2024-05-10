@@ -38,7 +38,7 @@ class MyApp extends ConsumerWidget {
     //Provider que maneja el router
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
-      title: 'PlayMax Players | TGU',
+      title: 'Max Players | TGU',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildAppTheme(),
       routerConfig: router,

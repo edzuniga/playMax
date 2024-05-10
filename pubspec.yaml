@@ -70,7 +70,6 @@ flutter_launcher_icons:
 flutter_native_splash:
   color: "#ffffff"
   image: assets/img/logo_playmax.png
-  web: false
 
 flutter:
   uses-material-design: true
